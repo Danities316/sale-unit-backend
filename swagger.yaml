@@ -1,0 +1,130 @@
+openapi: 3.0.3
+info:
+  title: User Authentication and Password Reset API
+  version: 1.0.0
+  description: API for user authentication, password reset, and related functionalities.
+
+servers:
+  - url: http://localhost:3000 # Update with your API server URL
+    description: Local development server
+
+paths:
+  /api/auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegistration'
+      responses:
+        '201':
+          description: User registered successfully.
+        '400':
+          description: Bad request, check your request data.
+        '409':
+          description: User with the same phone number or email already exists.
+
+  /api/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Log in with phone number and password.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLogin'
+      responses:
+        '200':
+          description: Login successful, returns an authentication token.
+        '401':
+          description: Unauthorized, invalid credentials.
+        '500':
+          description: Internal Server Error.
+
+  /api/auth/forgot-password:
+    post:
+      tags:
+        - Authentication
+      summary: Request a password reset email.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+      responses:
+        '200':
+          description: Password reset email sent successfully.
+        '400':
+          description: Bad request, check your request data.
+        '404':
+          description: User not found.
+        '500':
+          description: Internal Server Error.
+
+  /api/auth/reset-password/{resetToken}:
+    post:
+      tags:
+        - Authentication
+      summary: Reset user password using a valid reset token.
+      parameters:
+        - in: path
+          name: resetToken
+          required: true
+          description: The unique reset token sent to the user's email.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+      responses:
+        '200':
+          description: Password reset successful.
+        '400':
+          description: Bad request, check your request data.
+        '401':
+          description: Unauthorized, invalid or expired reset token.
+        '500':
+          description: Internal Server Error.
+
+components:
+  schemas:
+    UserRegistration:
+      type: object
+      properties:
+        name:
+          type: string
+        username:
+          type: string
+        password:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+    UserLogin:
+      type: object
+      properties:
+        phone:
+          type: string
+        password:
+          type: string
+    ForgotPasswordRequest:
+      type: object
+      properties:
+        email:
+          type: string
+    ResetPasswordRequest:
+      type: object
+      properties:
+        password:
+          type: string
