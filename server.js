@@ -9,7 +9,7 @@ const Sequelize = require('sequelize');
 const cors = require('cors');
 const helmet = require('helmet');
 const jwt = require('jsonwebtoken');
-const authRoutes = require('./src/routes/authRoutes');
+
 const fs = require('fs');
 const swaggerUi = require('swagger-ui-express');
 const jsyaml = require('js-yaml');
@@ -17,6 +17,9 @@ const spec = fs.readFileSync('swagger.yaml', 'utf8');
 const swaggerSpec = jsyaml.load(spec); // Import your Swagger specification
 const app = express();
 dotenv.config();
+
+const tenantMiddleware = require('./src/middleware/tenantMiddleware');
+const authRoutes = require('./src/routes/authRoutes');
 
 // Require and use Swagger documentation
 // require('./config/swagger-config')(app);
@@ -47,20 +50,21 @@ app.use(
 app.use(express.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
 // Error handling middleware (must be defined after routes)
 // app.use(errorHandler);
 
 console.log(
   'see data: ',
   process.env.DATABASE,
-  process.env.USERNAME,
+  process.env.USERNAMES,
   process.env.PASSWORD,
 );
 
 // Create a Sequelize instance and test the database connection
 const sequelize = new Sequelize(
   process.env.DATABASE,
-  process.env.USERNAME,
+  process.env.USERNAMES,
   process.env.PASSWORD,
   {
     host: process.env.HOST,
