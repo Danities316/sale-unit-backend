@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const User = require('../../models').User;
 const { forgetPasswordEmail, sendConfirmationEmail } = require('../../config/mailTransport'); // For sending email (you may use a different library)
 const dotenv = require('dotenv');
+const crypto = require('crypto');
 const sendVerificationCode = require("../../utils/twilio")
 
 dotenv.config();
@@ -19,7 +20,7 @@ const generateVerificationCode = () => {
 
 exports.registerUser = async (req, res) => {
   try {
-    const { name, username, password, email, phone } = req.body;
+    const { password, phone } = req.body;
 
     // Validate phone number
     if (!check('phone').isMobilePhone(phone, ['en-NG'])) {
@@ -49,28 +50,65 @@ exports.registerUser = async (req, res) => {
     try {
       // Send the verification code via SMS using Twilio
       await sendVerificationCode(phone, verificationCode);
+      
 
       // Hash the password before storing it
       const hashedPassword = bcrypt.hashSync(password, 10);
 
       // Create a new user record with verification code
       const newUser = await User.create({
-        name,
-        username,
         password: hashedPassword,
-        email,
         phone,
         verificationCode,
       });
 
+      // Generate and send JWT token
+    const token = jwt.sign({ userId: newUser.id }, JWT_SECRET);
       // Respond with a success message
-      return res.status(201).json({ message: 'Registration successful' });
+      return res.status(201).json({ token });
     } catch (twilioError) {
       console.error('Error sending SMS via Twilio:', twilioError);
       return res.status(500).json({ message: 'Error sending SMS via Twilio' });
     }
   } catch (error) {
     console.error('Error during registration:', error.message);
+    return res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+exports.updateUserInfo = async (req, res) => {
+  const user = req.user // comming from the jwt token;
+  console.log("this is the user: ", user)
+  try {
+    const { firstName, lastName, username, businessName, CAC, email } = req.body;
+
+    // Validate the incoming data
+    if (!firstName || !lastName || !username || !email) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
+
+    // Check if the user is authenticated (you may have a middleware for this)
+    if (user.isVerified != true) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    // Update user information in the User table
+    const userId = req.session.user.id; // Assuming you have a user ID in your session
+    const updatedUser = await User.update(
+      {
+        firstName,
+        lastName,
+        username,
+        businessName,
+        CAC,
+        email,
+      },
+      { where: { id: userId } }
+    );
+
+    return res.status(200).json({ message: 'User information updated successfully', user: updatedUser });
+  } catch (error) {
+    console.error('Error during user information update:', error.message);
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 };
@@ -85,13 +123,13 @@ exports.loginUser = async (req, res) => {
     // Compare the provided password with the stored hashed password
     const passwordMatch = await bcrypt.compare(password, user.password);
 
-    if (!user || !passwordMatch) {
+    if (passwordMatch) {
+      // Generate and send JWT token
+      const token = jwt.sign({ userId: user.id }, JWT_SECRET);
+      return res.status(200).json({ token });
+    } else {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
-
-    // Store user information in the session to authenticate
-    req.session.user = user;
-    return res.status(200).json({ message: 'Login successful', user });
   } catch (error) {
     console.error('Error during login:', error.message);
     return res.status(500).json({ message: 'Internal Server Error' });
@@ -127,7 +165,7 @@ exports.verifyPhoneNumber = async (req, res) => {
 
     return res
       .status(200)
-      .json({ message: 'Phone number verified successfully', user });
+      .json({ message: 'Phone number verified successfully' });
   } catch (error) {
     console.error('Error during phone number verification:', error.message);
     return res.status(500).json({ message: 'Internal Server Error' });
@@ -145,16 +183,12 @@ exports.forgotPassword = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Generate a temporary reset code (customize this as needed)
-    const resetToken = generateVerificationCode();
+    // Generate a temporary reset code
+    const resetToken =  crypto.randomBytes(20).toString('hex');
 
     // Set the reset token and expiration time in the user's record
     user.resetToken = resetToken;
     user.resetTokenExpiry = Date.now() + 3600000; // Token expires in 1 hour
-
-    // Store the reset code in the session
-    req.session.resetCode = resetToken;
-    req.session.user = user;
 
     // Save the user record
     await user.save();
