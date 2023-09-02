@@ -1,30 +1,46 @@
-'use strict';
-const {
-  Model
-} = require('sequelize');
+const { Model } = require('sequelize');
+
 module.exports = (sequelize, DataTypes) => {
   class User extends Model {
-    /**
-     * Helper method for defining associations.
-     * This method is not a part of Sequelize lifecycle.
-     * The `models/index` file will call this method automatically.
-     */
     static associate(models) {
-      // define association here
+      // Define associations here if applicable
+      // For example: this.hasMany(models.Post, { foreignKey: 'userId' });
     }
   }
-  User.init({
-    name: DataTypes.STRING,
-    username: DataTypes.STRING,
-    password: DataTypes.STRING,
-    email: DataTypes.STRING,
-    phone: DataTypes.STRING,
-    verificationCode: DataTypes.STRING,
-    resetToken:  DataTypes.STRING,
-    resetTokenExpiry:  DataTypes.DATE
-  }, {
-    sequelize,
-    modelName: 'User',
-  });
+
+  User.init(
+    {
+      firstName: DataTypes.STRING,
+      lastName: DataTypes.STRING,
+      username: DataTypes.STRING,
+      password: DataTypes.STRING,
+      isVerified: DataTypes.BOOLEAN,
+      businessName: DataTypes.STRING,
+      CAC: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+      },
+      email: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        unique: true,
+        validate: {
+          isEmail: true, // Validates email format
+        },
+      },
+      phone: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      verificationCode: DataTypes.STRING,
+      resetToken: DataTypes.STRING,
+      resetTokenExpiry: DataTypes.DATE,
+    },
+    {
+      sequelize,
+      modelName: 'User',
+    }
+  );
+
   return User;
 };

@@ -1,17 +1,42 @@
 const jwt = require('jsonwebtoken');
+const JWT_SECRET = process.env.JWT_SECRET;
 
-exports.authenticateJWT = (req, res, next) => {
-  const token = req.headers.authorization;
+// function authenticateJWT(req, res, next) {
+//   const token = req.header('Authorization');
+
+//   if (!token) {
+//     return res.status(401).json({ message: 'Unauthorized' });
+//   }
+
+//   jwt.verify(token, JWT_SECRET, (err, user) => {
+//     if (err) {
+//       console.error('Invalid Token:', err);
+//       return res.status(403).json({ message: 'Invalid token' });
+//     }
+//     req.user = user;
+//     next();
+//   });
+// }
+
+// module.exports = authenticateJWT
+function authenticateJWT(req, res, next) {
+  const token = req.header('Authorization');
 
   if (!token) {
     return res.status(401).json({ message: 'Unauthorized' });
   }
 
-  try {
-    const decoded = jwt.verify(token, 'your-secret-key');
-    req.user = decoded; // Attach user information to the request object if needed
-    next(); // Continue to the protected route if the token is valid
-  } catch (error) {
-    return res.status(401).json({ message: 'Unauthorized' });
-  }
-};
+  console.log('Received Token:', token); // Log the token for debugging
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      console.error('Invalid Token:', err);
+      return res.status(403).json({ message: 'Invalid token' });
+    }
+    req.user = user;
+    next();
+  });
+}
+
+module.exports = authenticateJWT;
+

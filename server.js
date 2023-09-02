@@ -33,6 +33,7 @@ app.use(
     saveUninitialized: false,
   }),
 );
+// console.log("this is the session:, ", session)
 app.use(express.json()); // Parse JSON requests
 app.use(morgan('combined')); // Logging
 app.use(
@@ -54,12 +55,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Error handling middleware (must be defined after routes)
 // app.use(errorHandler);
 
-console.log(
-  'see data: ',
-  process.env.DATABASE,
-  process.env.USERNAMES,
-  process.env.PASSWORD,
-);
+
 
 // Create a Sequelize instance and test the database connection
 const sequelize = new Sequelize(
@@ -73,17 +69,6 @@ const sequelize = new Sequelize(
   },
 );
 
-// just checking tabless
-// sequelize
-//   .getQueryInterface()
-//   .showAllSchemas()
-//   .then((tableObj) => {
-//     console.log("// Tables in database", "==========================");
-//     console.log(tableObj[3]);
-//   })
-//   .catch((err) => {
-//     console.log("showAllSchemas ERROR", err);
-//   });
 
 // Test the database connection
 sequelize
