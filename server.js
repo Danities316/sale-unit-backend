@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const morgan = require('morgan');
 const errorHandler = require('./src/middleware/errorHandler');
 const session = require('express-session');
+const MySQLStore = require('express-mysql-session')(session);
 const bodyParser = require('body-parser');
 const Sequelize = require('sequelize');
 const cors = require('cors');
@@ -24,15 +25,26 @@ const authRoutes = require('./src/routes/authRoutes');
 // Require and use Swagger documentation
 // require('./config/swagger-config')(app);
 
+const sessionStore = new MySQLStore({
+  host: process.env.HOST,
+  port: process.env.PORTS,
+  user: process.env.USERNAMES,
+  password: process.env.PASSWORD,
+  database:  process.env.DATABASE,
+ clearExpired: true, // Automatically remove expired sessions
+  checkExpirationInterval: 900000, // How frequently expired sessions will be cleared (in milliseconds)
+});
+
 //Middleware
 app.use(cors());
-app.use(
-  session({
+app.use(session({
     secret: process.env.JWT_SECRET,
+    maxAge: 3600000, // // Session expires in 1 hour
+    secure: true,    // Only transmit cookie over HTTPS
     resave: false,
-    saveUninitialized: false,
-  }),
-);
+    store: sessionStore,
+    saveUninitialized: true
+}));
 // console.log("this is the session:, ", session)
 app.use(express.json()); // Parse JSON requests
 app.use(morgan('combined')); // Logging

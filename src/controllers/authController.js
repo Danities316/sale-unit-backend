@@ -77,8 +77,8 @@ exports.registerUser = async (req, res) => {
 };
 
 exports.updateUserInfo = async (req, res) => {
-  const user = req.user // comming from the jwt token;
-  console.log("this is the user: ", user)
+  const id =  req.user.userId // comming from the jwt token;
+  console.log("this is the user: ", req.user)
   try {
     const { firstName, lastName, username, businessName, CAC, email } = req.body;
 
@@ -86,14 +86,18 @@ exports.updateUserInfo = async (req, res) => {
     if (!firstName || !lastName || !username || !email) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
-
-    // Check if the user is authenticated (you may have a middleware for this)
-    if (user.isVerified != true) {
-      return res.status(401).json({ message: 'Unauthorized' });
+   
+    const user =  await User.findAll({ where: { id } });
+  
+    
+    // Check if the user is authenticated 
+    if (user.isVerified == false) {
+      return res.status(401).json({ message: 'user Unauthorized' });
     }
 
+  
     // Update user information in the User table
-    const userId = req.session.user.id; // Assuming you have a user ID in your session
+    const userId = id; // Assuming you have a user ID in your session
     const updatedUser = await User.update(
       {
         firstName,
@@ -106,7 +110,7 @@ exports.updateUserInfo = async (req, res) => {
       { where: { id: userId } }
     );
 
-    return res.status(200).json({ message: 'User information updated successfully', user: updatedUser });
+    return res.status(200).json({ message: 'User information updated successfully' });
   } catch (error) {
     console.error('Error during user information update:', error.message);
     return res.status(500).json({ message: 'Internal Server Error' });
