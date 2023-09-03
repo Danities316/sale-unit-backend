@@ -13,7 +13,7 @@ router.post('/verify-phone', AuthController.verifyPhoneNumber);
 
 
 // Login route
-router.put('/update-user', authenticateJWT, AuthController.updateUserInfo);
+router.patch('/update-user', authenticateJWT, AuthController.updateUserInfo);
 
 // Login route
 router.post('/login', AuthController.loginUser);
