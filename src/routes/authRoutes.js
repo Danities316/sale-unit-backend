@@ -6,11 +6,8 @@ const authenticateJWT = require('../middleware/jwtMiddleware');
 // Registration route
 router.post('/register', AuthController.registerUser);
 
-
 // Phone number verification route
 router.post('/verify-phone', AuthController.verifyPhoneNumber);
-
-
 
 // Login route
 router.patch('/update-user', authenticateJWT, AuthController.updateUserInfo);

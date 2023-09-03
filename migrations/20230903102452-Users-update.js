@@ -61,7 +61,7 @@ module.exports = {
         validate: {
           is: /^[0-9]{11}$/i, // Validates phone number format (11 digits)
         },
-      },      
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE,
