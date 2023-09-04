@@ -1,32 +1,39 @@
-// const { Sequelize } = require('sequelize');
-
-// // Function to create a Sequelize instance for a specific tenant
-// const createTenantDatabase = (tenantConfig) => {
-//   return new Sequelize(tenantConfig);
-// }
-
-// module.exports = (req, res, next) => {
-//   const tenantId = req.user.tenantId; // Assuming you've identified the tenant somehow
-//   const tenantConfig = require(`../config/tenantConfigs/${tenantId}.json`); // Load the tenant-specific database config
-
-//   const tenantDatabase = createTenantDatabase(tenantConfig);
-//   req.tenantDatabase = tenantDatabase; // Attach the tenant-specific Sequelize instance to the request object
-
-//   next();
-// };
-
 const sequelize = require('../../config/database');
+const { QueryTypes } = require('sequelize');
+const TenantConfig = require('../../models').Tenantconfig; // Import the TenantConfig model
 
 const switchTenant = async (req, res, next) => {
-  // Get the tenant information from the authenticated user
   const { tenantId } = req.user;
 
-  // Dynamically set the Sequelize connection based on the tenantId
-  sequelize.options.database = `tenant_${tenantId}`;
   try {
-    await sequelize.authenticate();
+    // Fetch the tenant-specific configuration from the database
+    const tenantConfig = await TenantConfig.findByPk(tenantId);
+
+    if (!tenantConfig) {
+      return res.status(404).json({ message: 'Tenant not found' });
+    }
+
+    // Create a new Sequelize instance with the retrieved tenant-specific configuration
+    const tenantSequelize = new Sequelize(
+      tenantConfig.databaseName,
+      tenantConfig.username,
+      tenantConfig.password,
+      {
+        host: tenantConfig.host,
+        dialect: 'mysql', //
+        // We would add other options as needed
+      },
+    );
+
+    // Authenticate with the tenant-specific database
+    await tenantSequelize.authenticate();
+
+    // Replace the default Sequelize instance with the tenant-specific one
+    req.app.locals.sequelize = tenantSequelize;
+
     next();
   } catch (error) {
+    console.error('Failed to switch tenant:', error);
     res.status(500).json({ message: 'Failed to switch tenant' });
   }
 };
