@@ -31,7 +31,6 @@ module.exports = (sequelize) => {
     {
       sequelize,
       modelName: 'TenantConfig',
-      tableName: 'tenant_configs', // You can customize the table name
     },
   );
 

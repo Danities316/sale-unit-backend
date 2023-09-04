@@ -2,6 +2,7 @@ const { check, validationResult } = require('express-validator');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('../../models').User;
+const TenantConfig = require('../../models').Tenantconfigs;
 const {
   forgetPasswordEmail,
   sendConfirmationEmail,
@@ -111,10 +112,16 @@ exports.updateUserInfo = async (req, res) => {
       },
       { where: { id: userId } },
     );
+    await TenantConfig.create({
+      databaseName: username + id,
+      username: username,
+      password: user.password,
+      host: 'mysql',
+    });
 
-    return res
-      .status(200)
-      .json({ message: 'User information updated successfully' });
+    return res.status(200).json({
+      message: 'User information updated and Database created successfully',
+    });
   } catch (error) {
     console.error('Error during user information update:', error.message);
     return res.status(500).json({ message: 'Internal Server Error' });
