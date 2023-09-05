@@ -1,6 +1,20 @@
 const sequelize = require('../../config/database');
-const { QueryTypes } = require('sequelize');
-const TenantConfig = require('../../models').Tenantconfig; // Import the TenantConfig model
+const { QueryTypes, Sequelize } = require('sequelize');
+const { masterSequelize } = require('../../config/database'); // Import the master instance
+const { TenantConfig } = require('../../models'); // Import the TenantConfig model
+
+// Function to create a new tenant database
+const createTenantDatabase = async (databaseName) => {
+  try {
+    // Create the database using the master Sequelize instance
+    await masterSequelize.query(
+      `CREATE DATABASE IF NOT EXISTS ${databaseName};`,
+    );
+  } catch (error) {
+    console.error('Failed to create tenant database:', error);
+    throw error;
+  }
+};
 
 const switchTenant = async (req, res, next) => {
   const { tenantId } = req.user;
@@ -29,6 +43,8 @@ const switchTenant = async (req, res, next) => {
     await tenantSequelize.authenticate();
 
     // Replace the default Sequelize instance with the tenant-specific one
+    //This means that all subsequent database operations
+    //in the current request/response cycle will be performed on the tenant's database.
     req.app.locals.sequelize = tenantSequelize;
 
     next();
@@ -38,4 +54,4 @@ const switchTenant = async (req, res, next) => {
   }
 };
 
-module.exports = switchTenant;
+module.exports = { switchTenant, createTenantDatabase };

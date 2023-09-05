@@ -1,14 +1,18 @@
 const { check, validationResult } = require('express-validator');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const Sequelize = require('sequelize');
+const dotenv = require('dotenv');
+const crypto = require('crypto');
+const {
+  createTenantDatabase,
+} = require('../../src/middleware/tenantMiddleware');
 const User = require('../../models').User;
-const TenantConfig = require('../../models').Tenantconfigs;
+const { TenantConfig } = require('../../models');
 const {
   forgetPasswordEmail,
   sendConfirmationEmail,
 } = require('../../config/mailTransport'); // For sending email (you may use a different library)
-const dotenv = require('dotenv');
-const crypto = require('crypto');
 const sendVerificationCode = require('../../utils/twilio');
 
 dotenv.config();
@@ -20,6 +24,16 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const generateVerificationCode = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
+
+// exports.test = async (req, res) => {
+//   try {
+//     const tenant = await TenantConfig.create(req.body);
+//     res.status(201).json(tenant);
+//   } catch (error) {
+//     console.error('There is an error creating tenant ', error);
+//     res.status(500).json({ message: 'Internal Server Error' });
+//   }
+// };
 
 exports.registerUser = async (req, res) => {
   try {
@@ -93,6 +107,7 @@ exports.updateUserInfo = async (req, res) => {
     }
 
     const user = await User.findAll({ where: { id } });
+    console.log('this is the password: ', username + id);
 
     // Check if the user is authenticated
     if (user.isVerified == false) {
@@ -112,15 +127,38 @@ exports.updateUserInfo = async (req, res) => {
       },
       { where: { id: userId } },
     );
+
+    // Query the table to retrieve all rows
+    // TenantConfig.findAll()
+    //   .then((data) => {
+    //     // Process and log the retrieved data
+    //     console.log(data);
+    //   })
+    //   .catch((error) => {
+    //     console.error('Error retrieving data:', error);
+    //   });
+
+    // Insert tenant configuration into the central database(bookkeeping_db.TenantConfigs)
     await TenantConfig.create({
       databaseName: username + id,
       username: username,
-      password: user.password,
-      host: 'mysql',
+      password: user[0].password,
+      host: 3306,
+      dialect: 'mysql',
     });
 
+    createTenantDatabase(username + id)
+      .then(() => {
+        console.log(`${username + id} database created successfully`);
+      })
+      .catch((error) => {
+        console.error('Failed to create tenant database:', error);
+      });
+
     return res.status(200).json({
-      message: 'User information updated and Database created successfully',
+      message: `User information updated and Database for  ${
+        username + id
+      } created successfully`,
     });
   } catch (error) {
     console.error('Error during user information update:', error.message);

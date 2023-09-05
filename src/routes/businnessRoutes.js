@@ -2,6 +2,9 @@
 const express = require('express');
 const router = express.Router();
 const businessController = require('../controllers/businessController');
+const { switchTenant } = require('../middleware/tenantMiddleware');
+
+router.use(switchTenant);
 
 router.post('/', businessController.createBusiness);
 router.get('/', businessController.getAllBusinesses);
