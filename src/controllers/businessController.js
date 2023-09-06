@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 const { Business } = require('../../models');
 
 exports.createBusiness = async (req, res) => {
@@ -72,4 +73,25 @@ exports.deleteBusinessById = async (req, res) => {
     console.error(error);
     res.status(500).json({ message: 'Internal Server Error' });
   }
+=======
+const { body, validationResult } = require('express-validator');
+
+module.exports = {
+  validateRegistrationData: [
+    body('name').notEmpty(),
+    body('username').notEmpty(),
+    body('password').isLength({ min: 6 }),
+    body('email').isEmail(),
+    body('phone').isMobilePhone(),
+    (req, res, next) => {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+      next();
+    },
+  ],
+
+  // Define other user-related controllers here
+>>>>>>> 719d2b9a5c100c52a16bac7aa5de4b2195b3760c
 };

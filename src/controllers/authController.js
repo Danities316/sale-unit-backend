@@ -1,6 +1,7 @@
 const { check, validationResult } = require('express-validator');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+<<<<<<< HEAD
 const Sequelize = require('sequelize');
 const dotenv = require('dotenv');
 const crypto = require('crypto');
@@ -11,10 +12,18 @@ const {
 const User = require('../../models').User;
 const { TenantConfig } = require('../../models');
 const { Business } = require('../../models');
+=======
+const User = require('../../models').User;
+>>>>>>> 719d2b9a5c100c52a16bac7aa5de4b2195b3760c
 const {
   forgetPasswordEmail,
   sendConfirmationEmail,
 } = require('../../config/mailTransport'); // For sending email (you may use a different library)
+<<<<<<< HEAD
+=======
+const dotenv = require('dotenv');
+const crypto = require('crypto');
+>>>>>>> 719d2b9a5c100c52a16bac7aa5de4b2195b3760c
 const sendVerificationCode = require('../../utils/twilio');
 
 dotenv.config();
@@ -27,6 +36,7 @@ const generateVerificationCode = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
+<<<<<<< HEAD
 // exports.test = async (req, res) => {
 //   try {
 //     const tenant = await TenantConfig.create(req.body);
@@ -37,6 +47,8 @@ const generateVerificationCode = () => {
 //   }
 // };
 
+=======
+>>>>>>> 719d2b9a5c100c52a16bac7aa5de4b2195b3760c
 exports.registerUser = async (req, res) => {
   try {
     const { password, phone } = req.body;
@@ -68,6 +80,7 @@ exports.registerUser = async (req, res) => {
     // Generate a 6-digit verification code
     const verificationCode = generateVerificationCode();
 
+<<<<<<< HEAD
       try {
         // Send the verification code via SMS using Twilio
         await sendVerificationCode(phone, verificationCode);
@@ -76,6 +89,11 @@ exports.registerUser = async (req, res) => {
         return res.status(500).json({ message: 'Error sending SMS via Twilio' });
       }
 
+=======
+    try {
+      // Send the verification code via SMS using Twilio
+      await sendVerificationCode(phone, verificationCode);
+>>>>>>> 719d2b9a5c100c52a16bac7aa5de4b2195b3760c
 
       // Hash the password before storing it
       const hashedPassword = bcrypt.hashSync(password, 10);
@@ -91,6 +109,13 @@ exports.registerUser = async (req, res) => {
       const token = jwt.sign({ userId: newUser.id }, JWT_SECRET);
       // Respond with a success message
       return res.status(201).json({ token });
+<<<<<<< HEAD
+=======
+    } catch (twilioError) {
+      console.error('Error sending SMS via Twilio:', twilioError);
+      return res.status(500).json({ message: 'Error sending SMS via Twilio' });
+    }
+>>>>>>> 719d2b9a5c100c52a16bac7aa5de4b2195b3760c
   } catch (error) {
     console.error('Error during registration:', error.message);
     return res.status(500).json({ message: 'Internal Server Error' });
@@ -99,6 +124,7 @@ exports.registerUser = async (req, res) => {
 
 exports.updateUserInfo = async (req, res) => {
   const id = req.user.userId; // comming from the jwt token;
+<<<<<<< HEAD
   // console.log('this is the user: ', req.user);
   try {
     const {
@@ -122,6 +148,15 @@ exports.updateUserInfo = async (req, res) => {
       !BusinessCategory ||
       !email
     ) {
+=======
+  console.log('this is the user: ', req.user);
+  try {
+    const { firstName, lastName, username, businessName, CAC, email } =
+      req.body;
+
+    // Validate the incoming data
+    if (!firstName || !lastName || !username || !email) {
+>>>>>>> 719d2b9a5c100c52a16bac7aa5de4b2195b3760c
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
@@ -134,18 +169,29 @@ exports.updateUserInfo = async (req, res) => {
 
     // Update user information in the User table
     const userId = id; // Assuming you have a user ID in your session
+<<<<<<< HEAD
     // generate password to be used in the database
     const password = crypto.randomBytes(4).toString('hex');
     console.log('this is the pword: ', password);
 
+=======
+>>>>>>> 719d2b9a5c100c52a16bac7aa5de4b2195b3760c
     const updatedUser = await User.update(
       {
         firstName,
         lastName,
+<<<<<<< HEAD
+=======
+        username,
+        businessName,
+        CAC,
+        email,
+>>>>>>> 719d2b9a5c100c52a16bac7aa5de4b2195b3760c
       },
       { where: { id: userId } },
     );
 
+<<<<<<< HEAD
     // Insert tenant configuration into the central database(bookkeeping_db.TenantConfigs)
     await TenantConfig.create({
       databaseName: firstName + lastName + id,
@@ -189,6 +235,13 @@ exports.updateUserInfo = async (req, res) => {
     });
   } catch (error) {
     console.error('Error during user information update:', error);
+=======
+    return res
+      .status(200)
+      .json({ message: 'User information updated successfully' });
+  } catch (error) {
+    console.error('Error during user information update:', error.message);
+>>>>>>> 719d2b9a5c100c52a16bac7aa5de4b2195b3760c
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 };
@@ -351,6 +404,7 @@ exports.resetPassword = async (req, res) => {
     });
   }
 };
+<<<<<<< HEAD
 
 exports.tests = async (req, res) => {
   
@@ -366,3 +420,5 @@ try {
       });
     }
   }
+=======
+>>>>>>> 719d2b9a5c100c52a16bac7aa5de4b2195b3760c
