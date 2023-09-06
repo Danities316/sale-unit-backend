@@ -4,12 +4,19 @@ const { masterSequelize } = require('../../config/database'); // Import the mast
 const { TenantConfig } = require('../../models'); // Import the TenantConfig model
 
 // Function to create a new tenant database
-const createTenantDatabase = async (databaseName) => {
+const createTenantDatabase = async (databaseName, username, password) => {
   try {
     // Create the database using the master Sequelize instance
     await masterSequelize.query(
-      `CREATE DATABASE IF NOT EXISTS ${databaseName};`,
-    );
+      `CREATE DATABASE IF NOT EXISTS ${databaseName}_db
+      CHARACTER SET utf8mb4
+      COLLATE utf8mb4_unicode_ci;
+      
+      `);
+      // Create a user with privileges for the new database
+    await masterSequelize.query(`GRANT ALL PRIVILEGES ON ${databaseName}.* TO '${username}'@'localhost' IDENTIFIED BY '${password}';`);
+    // Reload privileges to apply the changes
+    await masterSequelize.query('FLUSH PRIVILEGES;');
   } catch (error) {
     console.error('Failed to create tenant database:', error);
     throw error;

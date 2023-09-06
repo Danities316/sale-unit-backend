@@ -133,7 +133,7 @@ exports.updateUserInfo = async (req, res) => {
     // Update user information in the User table
     const userId = id; // Assuming you have a user ID in your session
     // generate password to be used in the database
-    const password = crypto.randomBytes(4).toString('hex');
+    // const password = crypto.randomBytes(4).toString('hex');
     console.log('this is the pword: ', password);
 
     const updatedUser = await User.update(
@@ -148,7 +148,7 @@ exports.updateUserInfo = async (req, res) => {
     await TenantConfig.create({
       databaseName: firstName + lastName + id,
       username: firstName + lastName,
-      password: password,
+      password: 12345678,
       host: process.env.HOST,
       dialect: 'mysql',
       userId: userId,
@@ -184,7 +184,7 @@ exports.updateUserInfo = async (req, res) => {
       } created successfully`,
     });
   } catch (error) {
-    console.error('Error during user information update:', error.stack);
+    console.error('Error during user information update:', error);
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 };
