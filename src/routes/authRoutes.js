@@ -10,10 +10,11 @@ router.post('/register', AuthController.registerUser);
 router.post('/verify-phone', AuthController.verifyPhoneNumber);
 
 // Login route
-router.patch('/update-user', authenticateJWT, AuthController.updateUserInfo);
+router.post('/update-user', authenticateJWT, AuthController.updateUserInfo);
 
 // Login route
 router.post('/login', AuthController.loginUser);
+// router.post('/test', AuthController.test);
 
 // Forgot password route
 router.post('/forgot-password', AuthController.forgotPassword);

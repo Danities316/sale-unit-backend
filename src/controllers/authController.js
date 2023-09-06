@@ -1,13 +1,19 @@
 const { check, validationResult } = require('express-validator');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const Sequelize = require('sequelize');
+const dotenv = require('dotenv');
+const crypto = require('crypto');
+const {
+  createTenantDatabase,
+} = require('../../src/middleware/tenantMiddleware');
 const User = require('../../models').User;
+const { TenantConfig } = require('../../models');
+const { Business } = require('../../models');
 const {
   forgetPasswordEmail,
   sendConfirmationEmail,
 } = require('../../config/mailTransport'); // For sending email (you may use a different library)
-const dotenv = require('dotenv');
-const crypto = require('crypto');
 const sendVerificationCode = require('../../utils/twilio');
 
 dotenv.config();
@@ -19,6 +25,16 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const generateVerificationCode = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
+
+// exports.test = async (req, res) => {
+//   try {
+//     const tenant = await TenantConfig.create(req.body);
+//     res.status(201).json(tenant);
+//   } catch (error) {
+//     console.error('There is an error creating tenant ', error);
+//     res.status(500).json({ message: 'Internal Server Error' });
+//   }
+// };
 
 exports.registerUser = async (req, res) => {
   try {
@@ -81,13 +97,29 @@ exports.registerUser = async (req, res) => {
 
 exports.updateUserInfo = async (req, res) => {
   const id = req.user.userId; // comming from the jwt token;
-  console.log('this is the user: ', req.user);
+  // console.log('this is the user: ', req.user);
   try {
-    const { firstName, lastName, username, businessName, CAC, email } =
-      req.body;
+    const {
+      firstName,
+      lastName,
+      BusinessName,
+      RegNo,
+      email,
+      City,
+      stateOfResidence,
+      BusinessDescription,
+      YearFounded,
+      BusinessCategory,
+    } = req.body;
 
     // Validate the incoming data
-    if (!firstName || !lastName || !username || !email) {
+    if (
+      !firstName ||
+      !lastName ||
+      !stateOfResidence ||
+      !BusinessCategory ||
+      !email
+    ) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
@@ -100,23 +132,59 @@ exports.updateUserInfo = async (req, res) => {
 
     // Update user information in the User table
     const userId = id; // Assuming you have a user ID in your session
+    // generate password to be used in the database
+    // const password = crypto.randomBytes(4).toString('hex');
+    console.log('this is the pword: ', password);
+
     const updatedUser = await User.update(
       {
         firstName,
         lastName,
-        username,
-        businessName,
-        CAC,
-        email,
       },
       { where: { id: userId } },
     );
 
-    return res
-      .status(200)
-      .json({ message: 'User information updated successfully' });
+    // Insert tenant configuration into the central database(bookkeeping_db.TenantConfigs)
+    await TenantConfig.create({
+      databaseName: firstName + lastName + id,
+      username: firstName + lastName,
+      password: 12345678,
+      host: process.env.HOST,
+      dialect: 'mysql',
+      userId: userId,
+    });
+
+    createTenantDatabase(firstName + lastName + id)
+      .then(() => {
+        console.log(
+          `${firstName + lastName + id} database created successfully`,
+        );
+      })
+      .catch((error) => {
+        console.error('Failed to create tenant database:', error);
+      });
+
+    await Business.create({
+      firstName,
+      lastName,
+      BusinessName,
+      RegNo,
+      email,
+      City,
+      stateOfResidence,
+      BusinessDescription,
+      YearFounded,
+      BusinessCategory,
+      TenantID: user.userId,
+    });
+
+    return res.status(200).json({
+      message: `User information updated and Database for  ${
+        firstName + lastName + id
+      } created successfully`,
+    });
   } catch (error) {
-    console.error('Error during user information update:', error.message);
+    console.error('Error during user information update:', error);
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 };

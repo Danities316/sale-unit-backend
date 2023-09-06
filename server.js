@@ -2,7 +2,6 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const dotenv = require('dotenv');
 const morgan = require('morgan');
-const errorHandler = require('./src/middleware/errorHandler');
 const session = require('express-session');
 const MySQLStore = require('express-mysql-session')(session);
 const bodyParser = require('body-parser');
@@ -10,41 +9,58 @@ const Sequelize = require('sequelize');
 const cors = require('cors');
 const helmet = require('helmet');
 const jwt = require('jsonwebtoken');
-
 const fs = require('fs');
+const { masterSequelize } = require('./config/database');
+const errorHandler = require('./src/middleware/errorHandler');
 const swaggerUi = require('swagger-ui-express');
 const jsyaml = require('js-yaml');
 const spec = fs.readFileSync('swagger.yaml', 'utf8');
 const swaggerSpec = jsyaml.load(spec); // Import your Swagger specification
-const app = express();
 dotenv.config();
 
 const tenantMiddleware = require('./src/middleware/tenantMiddleware');
 const authRoutes = require('./src/routes/authRoutes');
+const businessRoutes = require('./src/routes/businnessRoutes');
 
 // Require and use Swagger documentation
 // require('./config/swagger-config')(app);
+
+// Test the master database connection
+masterSequelize
+  .authenticate()
+  .then(() => {
+    console.log(
+      'Master database connection has been established successfully.',
+    );
+  })
+  .catch((err) => {
+    console.error('Unable to connect to the master database:', err);
+  });
+
+const app = express();
 
 const sessionStore = new MySQLStore({
   host: process.env.HOST,
   port: process.env.PORTS,
   user: process.env.USERNAMES,
   password: process.env.PASSWORD,
-  database:  process.env.DATABASE,
- clearExpired: true, // Automatically remove expired sessions
+  database: process.env.DATABASE,
+  clearExpired: true, // Automatically remove expired sessions
   checkExpirationInterval: 900000, // How frequently expired sessions will be cleared (in milliseconds)
 });
 
 //Middleware
 app.use(cors());
-app.use(session({
+app.use(
+  session({
     secret: process.env.JWT_SECRET,
     maxAge: 3600000, // // Session expires in 1 hour
-    secure: true,    // Only transmit cookie over HTTPS
+    secure: true, // Only transmit cookie over HTTPS
     resave: false,
     store: sessionStore,
-    saveUninitialized: true
-}));
+    saveUninitialized: true,
+  }),
+);
 // console.log("this is the session:, ", session)
 app.use(express.json()); // Parse JSON requests
 app.use(morgan('combined')); // Logging
@@ -67,33 +83,31 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Error handling middleware (must be defined after routes)
 // app.use(errorHandler);
 
+// // Create a Sequelize instance and test the database connection
+// const sequelize = new Sequelize(
+//   process.env.DATABASE,
+//   process.env.USERNAMES,
+//   process.env.PASSWORD,
+//   {
+//     host: process.env.HOST,
+//     dialect: process.env.DIELECT,
+//     port: process.env.PORTS,
+//   },
+// );
 
-
-// Create a Sequelize instance and test the database connection
-const sequelize = new Sequelize(
-  process.env.DATABASE,
-  process.env.USERNAMES,
-  process.env.PASSWORD,
-  {
-    host: process.env.HOST,
-    dialect: process.env.DIELECT,
-    port: process.env.PORTS,
-  },
-);
-
-
-// Test the database connection
-sequelize
-  .authenticate()
-  .then(() => {
-    console.log('Database connection has been established successfully.');
-  })
-  .catch((err) => {
-    console.error('Unable to connect to the database:', err);
-  });
+// // Test the database connection
+// sequelize
+//   .authenticate()
+//   .then(() => {
+//     console.log('Database connection has been established successfully.');
+//   })
+//   .catch((err) => {
+//     console.error('Unable to connect to the database:', err);
+//   });
 
 // Routes Define  API routes here
 app.use('/api/auth', authRoutes);
+app.use('/api/business', businessRoutes);
 // Serve Swagger UI at /api-docs
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
