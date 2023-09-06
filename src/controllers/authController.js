@@ -9,6 +9,7 @@ const {
 } = require('../../src/middleware/tenantMiddleware');
 const User = require('../../models').User;
 const { TenantConfig } = require('../../models');
+const { Business } = require('../../models');
 const {
   forgetPasswordEmail,
   sendConfirmationEmail,
@@ -96,18 +97,33 @@ exports.registerUser = async (req, res) => {
 
 exports.updateUserInfo = async (req, res) => {
   const id = req.user.userId; // comming from the jwt token;
-  console.log('this is the user: ', req.user);
+  // console.log('this is the user: ', req.user);
   try {
-    const { firstName, lastName, username, businessName, CAC, email } =
-      req.body;
+    const {
+      firstName,
+      lastName,
+      BusinessName,
+      RegNo,
+      email,
+      City,
+      stateOfResidence,
+      BusinessDescription,
+      YearFounded,
+      BusinessCategory,
+    } = req.body;
 
     // Validate the incoming data
-    if (!firstName || !lastName || !username || !email) {
+    if (
+      !firstName ||
+      !lastName ||
+      !stateOfResidence ||
+      !BusinessCategory ||
+      !email
+    ) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
     const user = await User.findAll({ where: { id } });
-    console.log('this is the password: ', username + id);
 
     // Check if the user is authenticated
     if (user.isVerified == false) {
@@ -116,52 +132,59 @@ exports.updateUserInfo = async (req, res) => {
 
     // Update user information in the User table
     const userId = id; // Assuming you have a user ID in your session
+    // generate password to be used in the database
+    const password = crypto.randomBytes(4).toString('hex');
+    console.log('this is the pword: ', password);
+
     const updatedUser = await User.update(
       {
         firstName,
         lastName,
-        username,
-        businessName,
-        CAC,
-        email,
       },
       { where: { id: userId } },
     );
 
-    // Query the table to retrieve all rows
-    // TenantConfig.findAll()
-    //   .then((data) => {
-    //     // Process and log the retrieved data
-    //     console.log(data);
-    //   })
-    //   .catch((error) => {
-    //     console.error('Error retrieving data:', error);
-    //   });
-
     // Insert tenant configuration into the central database(bookkeeping_db.TenantConfigs)
     await TenantConfig.create({
-      databaseName: username + id,
-      username: username,
-      password: user[0].password,
-      host: 3306,
+      databaseName: firstName + lastName + id,
+      username: firstName + lastName,
+      password: password,
+      host: process.env.HOST,
       dialect: 'mysql',
+      userId: userId,
     });
 
-    createTenantDatabase(username + id)
+    createTenantDatabase(firstName + lastName + id)
       .then(() => {
-        console.log(`${username + id} database created successfully`);
+        console.log(
+          `${firstName + lastName + id} database created successfully`,
+        );
       })
       .catch((error) => {
         console.error('Failed to create tenant database:', error);
       });
 
+    await Business.create({
+      firstName,
+      lastName,
+      BusinessName,
+      RegNo,
+      email,
+      City,
+      stateOfResidence,
+      BusinessDescription,
+      YearFounded,
+      BusinessCategory,
+      TenantID: user.userId,
+    });
+
     return res.status(200).json({
       message: `User information updated and Database for  ${
-        username + id
+        firstName + lastName + id
       } created successfully`,
     });
   } catch (error) {
-    console.error('Error during user information update:', error.message);
+    console.error('Error during user information update:', error.stack);
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 };

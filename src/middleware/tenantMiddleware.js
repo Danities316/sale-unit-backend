@@ -17,15 +17,21 @@ const createTenantDatabase = async (databaseName) => {
 };
 
 const switchTenant = async (req, res, next) => {
-  const { tenantId } = req.user;
+  const { userId } = req.user;
+  // console.log('This is the user: ', userId);
 
   try {
     // Fetch the tenant-specific configuration from the database
-    const tenantConfig = await TenantConfig.findByPk(tenantId);
+    const tenantConfig = await TenantConfig.findOne({
+      where: { userId: userId },
+    });
 
     if (!tenantConfig) {
       return res.status(404).json({ message: 'Tenant not found' });
     }
+    // console.log(
+    //   `Tenant with database config: ${tenantConfig.password} is switched  `,
+    // );
 
     // Create a new Sequelize instance with the retrieved tenant-specific configuration
     const tenantSequelize = new Sequelize(

@@ -10,11 +10,6 @@ module.exports = (sequelize) => {
 
   Business.init(
     {
-      BusinessID: {
-        type: DataTypes.INTEGER,
-        primaryKey: true,
-        autoIncrement: true,
-      },
       BusinessName: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -22,6 +17,7 @@ module.exports = (sequelize) => {
       BusinessCategory: DataTypes.STRING,
       City: DataTypes.STRING,
       YearFounded: DataTypes.DATE,
+      stateOfResidence: DataTypes.STRING,
       BusinessDescription: DataTypes.TEXT,
       BusinessLogo: DataTypes.STRING,
       RegNo: DataTypes.BOOLEAN,

@@ -3,7 +3,9 @@ const express = require('express');
 const router = express.Router();
 const businessController = require('../controllers/businessController');
 const { switchTenant } = require('../middleware/tenantMiddleware');
+const authenticateJWT = require('../middleware/jwtMiddleware');
 
+router.use(authenticateJWT);
 router.use(switchTenant);
 
 router.post('/', businessController.createBusiness);
