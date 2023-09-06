@@ -1,7 +1,8 @@
 const { Business } = require('../../models');
 
 exports.createBusiness = async (req, res) => {
-  // const id = req.user;
+  const id = req.user;
+  console.log("show id: ", id)
 
   try {
     const business = await Business.create(req.body);

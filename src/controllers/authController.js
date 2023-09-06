@@ -6,6 +6,7 @@ const dotenv = require('dotenv');
 const crypto = require('crypto');
 const {
   createTenantDatabase,
+  switchTenant
 } = require('../../src/middleware/tenantMiddleware');
 const User = require('../../models').User;
 const { TenantConfig } = require('../../models');
@@ -67,9 +68,14 @@ exports.registerUser = async (req, res) => {
     // Generate a 6-digit verification code
     const verificationCode = generateVerificationCode();
 
-    try {
-      // Send the verification code via SMS using Twilio
-      await sendVerificationCode(phone, verificationCode);
+      try {
+        // Send the verification code via SMS using Twilio
+        await sendVerificationCode(phone, verificationCode);
+      } catch (twilioError) {
+        console.error('Error sending SMS via Twilio:', twilioError.stack);
+        return res.status(500).json({ message: 'Error sending SMS via Twilio' });
+      }
+
 
       // Hash the password before storing it
       const hashedPassword = bcrypt.hashSync(password, 10);
@@ -85,10 +91,6 @@ exports.registerUser = async (req, res) => {
       const token = jwt.sign({ userId: newUser.id }, JWT_SECRET);
       // Respond with a success message
       return res.status(201).json({ token });
-    } catch (twilioError) {
-      console.error('Error sending SMS via Twilio:', twilioError);
-      return res.status(500).json({ message: 'Error sending SMS via Twilio' });
-    }
   } catch (error) {
     console.error('Error during registration:', error.message);
     return res.status(500).json({ message: 'Internal Server Error' });
@@ -133,7 +135,7 @@ exports.updateUserInfo = async (req, res) => {
     // Update user information in the User table
     const userId = id; // Assuming you have a user ID in your session
     // generate password to be used in the database
-    // const password = crypto.randomBytes(4).toString('hex');
+    const password = crypto.randomBytes(4).toString('hex');
     console.log('this is the pword: ', password);
 
     const updatedUser = await User.update(
@@ -148,13 +150,13 @@ exports.updateUserInfo = async (req, res) => {
     await TenantConfig.create({
       databaseName: firstName + lastName + id,
       username: firstName + lastName,
-      password: 12345678,
+      password: password,
       host: process.env.HOST,
       dialect: 'mysql',
       userId: userId,
     });
 
-    createTenantDatabase(firstName + lastName + id)
+    createTenantDatabase(firstName + lastName + id, firstName + lastName, password)
       .then(() => {
         console.log(
           `${firstName + lastName + id} database created successfully`,
@@ -163,6 +165,8 @@ exports.updateUserInfo = async (req, res) => {
       .catch((error) => {
         console.error('Failed to create tenant database:', error);
       });
+
+      // await switchTenant();
 
     await Business.create({
       firstName,
@@ -347,3 +351,18 @@ exports.resetPassword = async (req, res) => {
     });
   }
 };
+
+exports.tests = async (req, res) => {
+  
+try { 
+  console.log('You are in the database now');
+    return res.status(500).json(
+      'You are in the database now'
+    );
+  } catch(err) {
+      console.log('Error resetting password', error);
+      return res.status(500).json({
+        error: 'An error occurred while resetting the password!',
+      });
+    }
+  }
