@@ -1,6 +1,7 @@
 const { Sequelize } = require('sequelize');
 const { Business } = require('../../models');
 
+
 // Define the Business model with attributes and relationships
 const defineBusinessModel = (tenantSequelize) => {
   return tenantSequelize.define('Business', {
@@ -9,13 +10,7 @@ const defineBusinessModel = (tenantSequelize) => {
     stateOfResidence: Sequelize.STRING,
     YearFounded: Sequelize.DATE,
     BusinessDescription: Sequelize.TEXT,
-    userId: {
-      type: Sequelize.INTEGER,
-      references: {
-        model: 'Tenant', // Adjust the model name as needed
-        key: 'id',
-      },
-    },
+    userId: Sequelize.INTEGER,
     BusinessLogo: Sequelize.STRING,
     RegNo: Sequelize.BOOLEAN,
   });
@@ -23,7 +18,8 @@ const defineBusinessModel = (tenantSequelize) => {
 
 exports.createBusiness = async (req, res) => {
   const { tenantSequelize } = req; // Get the tenant-specific Sequelize instance
-  console.log("show DB: ",  tenantSequelize)
+  // console.log("show DB: ",  tenantSequelize)
+ 
 
   try {
     // Define the Business model for the current tenant
@@ -31,7 +27,9 @@ exports.createBusiness = async (req, res) => {
 
     // Synchronize the Business model with the tenant-specific database
     await BusinessModel.sync();
+
     const newBusiness = await Business.create(req.body);
+    // console.log("the body and the Business: " + newBusiness.BusinessName)
     res.status(201).json(newBusiness);
   } catch (error) {
     console.error('There is an error creating bussiness ', error);
