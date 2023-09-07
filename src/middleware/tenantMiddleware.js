@@ -2,23 +2,46 @@ const sequelize = require('../../config/database');
 const { QueryTypes, Sequelize } = require('sequelize');
 const { masterSequelize } = require('../../config/database'); // Import the master instance
 const { TenantConfig } = require('../../models'); // Import the TenantConfig model
+const { Business } = require('../../models');
 
 // Function to create a new tenant database
-const createTenantDatabase = async (databaseName) => {
+const createTenantDatabase = async (databaseName, username, password) => {
   try {
+    // databaseNameTolowercase = databaseName.toLowerCase();
     // Create the database using the master Sequelize instance
     await masterSequelize.query(
-      `CREATE DATABASE IF NOT EXISTS ${databaseName};`,
+      `CREATE DATABASE IF NOT EXISTS ${databaseName}_db
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+       `,
     );
+
+    // Create a user with privileges for the new database
+    await masterSequelize.query(
+      `
+CREATE USER '${username}'@'localhost' IDENTIFIED BY '${password}';
+`,
+      { multiQuery: true },
+    ); // multiQuery: true allow multiple statemenent otbe run on mysql
+
+    // Grant privileges to the user for the new database
+    await masterSequelize.query(
+      `
+  GRANT ALL PRIVILEGES ON ${databaseName}_db.* TO '${username}'@'localhost';
+`,
+      { multiQuery: true },
+    );
+
+    // Reload privileges to apply the changes
+    await masterSequelize.query('FLUSH PRIVILEGES;', { multiQuery: true });
   } catch (error) {
     console.error('Failed to create tenant database:', error);
-    throw error;
+    return console.log('Failed to create tenant database');
   }
 };
 
 const switchTenant = async (req, res, next) => {
   const { userId } = req.user;
-  // console.log('This is the user: ', userId);
 
   try {
     // Fetch the tenant-specific configuration from the database
@@ -29,9 +52,11 @@ const switchTenant = async (req, res, next) => {
     if (!tenantConfig) {
       return res.status(404).json({ message: 'Tenant not found' });
     }
-    // console.log(
-    //   `Tenant with database config: ${tenantConfig.password} is switched  `,
-    // );
+    // const databaseName = tenantConfig.databaseName.toLowerCase();
+
+    console.log(
+      `Tenant with database config: ${tenantConfig.password} and ${tenantConfig.username}  and ${tenantConfig.databaseName}  and ${tenantConfig.host} is switched  `,
+    );
 
     // Create a new Sequelize instance with the retrieved tenant-specific configuration
     const tenantSequelize = new Sequelize(
@@ -40,23 +65,27 @@ const switchTenant = async (req, res, next) => {
       tenantConfig.password,
       {
         host: tenantConfig.host,
-        dialect: 'mysql', //
-        // We would add other options as needed
+        dialect: 'mysql',
       },
     );
 
     // Authenticate with the tenant-specific database
     await tenantSequelize.authenticate();
 
+    await Business.sync();
+
     // Replace the default Sequelize instance with the tenant-specific one
     //This means that all subsequent database operations
     //in the current request/response cycle will be performed on the tenant's database.
-    req.app.locals.sequelize = tenantSequelize;
+    req.tenantSequelize = tenantSequelize;
 
     next();
   } catch (error) {
     console.error('Failed to switch tenant:', error);
-    res.status(500).json({ message: 'Failed to switch tenant' });
+    return res.status(500).json({
+      message:
+        'Internal Server Error, there is an error swiwting Tenants database',
+    });
   }
 };
 

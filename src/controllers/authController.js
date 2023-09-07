@@ -143,10 +143,10 @@ exports.updateUserInfo = async (req, res) => {
       },
       { where: { id: userId } },
     );
-
+    const databaseName = (firstName + lastName + id).toLowerCase();
     // Insert tenant configuration into the central database(bookkeeping_db.TenantConfigs)
     await TenantConfig.create({
-      databaseName: firstName + lastName + id,
+      databaseName: databaseName + '_db',
       username: firstName + lastName,
       password: password,
       host: process.env.HOST,
@@ -154,7 +154,11 @@ exports.updateUserInfo = async (req, res) => {
       userId: userId,
     });
 
-    createTenantDatabase(firstName + lastName + id)
+    createTenantDatabase(
+      firstName + lastName + id,
+      firstName + lastName,
+      password,
+    )
       .then(() => {
         console.log(
           `${firstName + lastName + id} database created successfully`,

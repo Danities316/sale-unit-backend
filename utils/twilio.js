@@ -7,7 +7,8 @@ const sendVerificationCode = async function (event, context) {
   try {
     return await sendMessage(event, context);
   } catch (error) {
-    return console.error('Error sending Twilio sms:', error.message);
+    console.error('Error sending Twilio sms:', error.message);
+    return res.status(500).json('Error sending Twilio sms:');
   }
 };
 

@@ -1,11 +1,37 @@
+const { Sequelize } = require('sequelize');
 const { Business } = require('../../models');
+const defineBusinessModel = require('../../models/business');
+defineBusinessModel;
+
+// Define the Business model with attributes and relationships
+// const defineBusinessModel = (tenantSequelize) => {
+//   return tenantSequelize.define('Business', {
+//     BusinessName: Sequelize.STRING,
+//     BusinessCategory: Sequelize.STRING,
+//     stateOfResidence: Sequelize.STRING,
+//     YearFounded: Sequelize.DATE,
+//     BusinessDescription: Sequelize.TEXT,
+//     userId: Sequelize.INTEGER,
+//     BusinessLogo: Sequelize.STRING,
+//     RegNo: Sequelize.BOOLEAN,
+//   });
+// };
 
 exports.createBusiness = async (req, res) => {
-  // const id = req.user;
+  const { tenantSequelize } = req; // Get the tenant-specific Sequelize instance
+  // console.log("show DB: ",  tenantSequelize)
+  // console.log('Inside route handler. tenantSequelize:', tenantSequelize);
 
   try {
-    const business = await Business.create(req.body);
-    res.status(201).json(business);
+    // Define the Business model for the current tenant
+    const BusinessModel = defineBusinessModel(tenantSequelize);
+
+    // Synchronize the Business model with the tenant-specific database
+    await BusinessModel.sync();
+
+    const newBusiness = await Business.create(req.body);
+    // console.log("the body and the Business: " + newBusiness.BusinessName)
+    res.status(201).json(newBusiness);
   } catch (error) {
     console.error('There is an error creating bussiness ', error);
     res.status(500).json({ message: 'Internal Server Error' });
