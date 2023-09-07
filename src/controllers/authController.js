@@ -1,64 +1,40 @@
 const { check, validationResult } = require('express-validator');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-<<<<<<< HEAD
-const Sequelize = require('sequelize');
-const dotenv = require('dotenv');
 const crypto = require('crypto');
-const {
-  createTenantDatabase,
-  switchTenant
-} = require('../../src/middleware/tenantMiddleware');
-const User = require('../../models').User;
-const { TenantConfig } = require('../../models');
-const { Business } = require('../../models');
-=======
-const User = require('../../models').User;
->>>>>>> 719d2b9a5c100c52a16bac7aa5de4b2195b3760c
+const { User } = require('../../models');
 const {
   forgetPasswordEmail,
   sendConfirmationEmail,
 } = require('../../config/mailTransport'); // For sending email (you may use a different library)
-<<<<<<< HEAD
-=======
-const dotenv = require('dotenv');
-const crypto = require('crypto');
->>>>>>> 719d2b9a5c100c52a16bac7aa5de4b2195b3760c
 const sendVerificationCode = require('../../utils/twilio');
+const dotenv = require('dotenv');
+const {
+  createTenantDatabase,
+  switchTenant
+} = require('../../src/middleware/tenantMiddleware');
+const { TenantConfig } = require('../../models');
+const { Business } = require('../../models');
 
 dotenv.config();
 
 // Secret key for JWT token
 const JWT_SECRET = process.env.JWT_SECRET;
-// Your AccountSID and Auth Token from console.twilio.com
 
 const generateVerificationCode = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-<<<<<<< HEAD
-// exports.test = async (req, res) => {
-//   try {
-//     const tenant = await TenantConfig.create(req.body);
-//     res.status(201).json(tenant);
-//   } catch (error) {
-//     console.error('There is an error creating tenant ', error);
-//     res.status(500).json({ message: 'Internal Server Error' });
-//   }
-// };
-
-=======
->>>>>>> 719d2b9a5c100c52a16bac7aa5de4b2195b3760c
+// Register a new user
 exports.registerUser = async (req, res) => {
   try {
     const { password, phone } = req.body;
 
-    // Validate phone number
+    // Validate phone number and password
     if (!check('phone').isMobilePhone(phone, ['en-NG'])) {
       return res.status(400).json('Must provide a valid US phone number.');
     }
 
-    // Validate password
     if (!check('password').isLength({ min: 6 })) {
       return res.status(400).json('Password must be more than 6 characters.');
     }
@@ -80,168 +56,60 @@ exports.registerUser = async (req, res) => {
     // Generate a 6-digit verification code
     const verificationCode = generateVerificationCode();
 
-<<<<<<< HEAD
-      try {
-        // Send the verification code via SMS using Twilio
-        await sendVerificationCode(phone, verificationCode);
-      } catch (twilioError) {
-        console.error('Error sending SMS via Twilio:', twilioError.stack);
-        return res.status(500).json({ message: 'Error sending SMS via Twilio' });
-      }
-
-=======
+    // Send the verification code via SMS using Twilio
     try {
-      // Send the verification code via SMS using Twilio
       await sendVerificationCode(phone, verificationCode);
->>>>>>> 719d2b9a5c100c52a16bac7aa5de4b2195b3760c
-
-      // Hash the password before storing it
-      const hashedPassword = bcrypt.hashSync(password, 10);
-
-      // Create a new user record with verification code
-      const newUser = await User.create({
-        password: hashedPassword,
-        phone,
-        verificationCode,
-      });
-
-      // Generate and send JWT token
-      const token = jwt.sign({ userId: newUser.id }, JWT_SECRET);
-      // Respond with a success message
-      return res.status(201).json({ token });
-<<<<<<< HEAD
-=======
     } catch (twilioError) {
-      console.error('Error sending SMS via Twilio:', twilioError);
+      console.error('Error sending SMS via Twilio:', twilioError.stack);
       return res.status(500).json({ message: 'Error sending SMS via Twilio' });
     }
->>>>>>> 719d2b9a5c100c52a16bac7aa5de4b2195b3760c
+
+    // Hash the password before storing it
+    const hashedPassword = bcrypt.hashSync(password, 10);
+
+    // Create a new user record with verification code
+    const newUser = await User.create({
+      password: hashedPassword,
+      phone,
+      verificationCode,
+    });
+
+    // Generate and send JWT token
+    const token = jwt.sign({ userId: newUser.id }, JWT_SECRET);
+
+    // Respond with a success message
+    return res.status(201).json({ token });
   } catch (error) {
     console.error('Error during registration:', error.message);
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 };
 
-exports.updateUserInfo = async (req, res) => {
-  const id = req.user.userId; // comming from the jwt token;
-<<<<<<< HEAD
-  // console.log('this is the user: ', req.user);
+exports.verifyPhoneNumber = async (req, res) => {
   try {
-    const {
-      firstName,
-      lastName,
-      BusinessName,
-      RegNo,
-      email,
-      City,
-      stateOfResidence,
-      BusinessDescription,
-      YearFounded,
-      BusinessCategory,
-    } = req.body;
+    const { phone, verificationCode } = req.body;
 
-    // Validate the incoming data
-    if (
-      !firstName ||
-      !lastName ||
-      !stateOfResidence ||
-      !BusinessCategory ||
-      !email
-    ) {
-=======
-  console.log('this is the user: ', req.user);
-  try {
-    const { firstName, lastName, username, businessName, CAC, email } =
-      req.body;
+    // Find the user by phone number
+    const user = await User.findOne({ where: { phone } });
 
-    // Validate the incoming data
-    if (!firstName || !lastName || !username || !email) {
->>>>>>> 719d2b9a5c100c52a16bac7aa5de4b2195b3760c
-      return res.status(400).json({ message: 'Missing required fields' });
+    if (!user || user.verificationCode !== verificationCode) {
+      // Implement rate limiting here to prevent abuse
+      return res.status(401).json({ message: 'Invalid verification code' });
     }
 
-    const user = await User.findAll({ where: { id } });
+    // Mark the user as verified in the database
+    user.isVerified = true;
+    user.verificationCode = null;
+    await user.save();
 
-    // Check if the user is authenticated
-    if (user.isVerified == false) {
-      return res.status(401).json({ message: 'user Unauthorized' });
-    }
+    // Log the successful verification
+    console.log(`Phone number ${phone} verified successfully`);
 
-    // Update user information in the User table
-    const userId = id; // Assuming you have a user ID in your session
-<<<<<<< HEAD
-    // generate password to be used in the database
-    const password = crypto.randomBytes(4).toString('hex');
-    console.log('this is the pword: ', password);
-
-=======
->>>>>>> 719d2b9a5c100c52a16bac7aa5de4b2195b3760c
-    const updatedUser = await User.update(
-      {
-        firstName,
-        lastName,
-<<<<<<< HEAD
-=======
-        username,
-        businessName,
-        CAC,
-        email,
->>>>>>> 719d2b9a5c100c52a16bac7aa5de4b2195b3760c
-      },
-      { where: { id: userId } },
-    );
-
-<<<<<<< HEAD
-    // Insert tenant configuration into the central database(bookkeeping_db.TenantConfigs)
-    await TenantConfig.create({
-      databaseName: firstName + lastName + id,
-      username: firstName + lastName,
-      password: password,
-      host: process.env.HOST,
-      dialect: 'mysql',
-      userId: userId,
-    });
-
-    createTenantDatabase(firstName + lastName + id, firstName + lastName, password)
-      .then(() => {
-        console.log(
-          `${firstName + lastName + id} database created successfully`,
-        );
-      })
-      .catch((error) => {
-        console.error('Failed to create tenant database:', error);
-      });
-
-      // await switchTenant();
-
-    await Business.create({
-      firstName,
-      lastName,
-      BusinessName,
-      RegNo,
-      email,
-      City,
-      stateOfResidence,
-      BusinessDescription,
-      YearFounded,
-      BusinessCategory,
-      TenantID: user.userId,
-    });
-
-    return res.status(200).json({
-      message: `User information updated and Database for  ${
-        firstName + lastName + id
-      } created successfully`,
-    });
-  } catch (error) {
-    console.error('Error during user information update:', error);
-=======
     return res
       .status(200)
-      .json({ message: 'User information updated successfully' });
+      .json({ message: 'Phone number verified successfully' });
   } catch (error) {
-    console.error('Error during user information update:', error.message);
->>>>>>> 719d2b9a5c100c52a16bac7aa5de4b2195b3760c
+    console.error('Error during phone number verification:', error.message);
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 };
@@ -269,76 +137,103 @@ exports.loginUser = async (req, res) => {
   }
 };
 
-exports.logout = (req, res) => {
-  req.logout((err) => {
-    if (err) {
-      return next(err);
-    }
-  });
+// Update user information
+exports.updateUserInfo = async (req, res) => {
+  const userId = req.user.userId; // Coming from the jwt token;
 
-  return res.json({
-    message: 'User logged out',
-  });
-};
-
-exports.verifyPhoneNumber = async (req, res) => {
   try {
-    const { phone, verificationCode } = req.body;
+    const   {
+      firstName,
+      lastName,
+      BusinessName,
+      BusinessCAtegory,
+      BusinessDescription,
+      BusinessLogo,
+      stateOfResidence,
+      YearFounded, 
+      RegNo,
+      email,
+    } =
+      req.body;
 
-    // Validate phone number format (You can use a library like 'libphonenumber' for more thorough validation)
-    // if (!/^\d{10}$/.test(phone)) {
-    //   return res.status(400).json({ message: 'Invalid phone number format' });
-    // }
-
-    // Find the user by phone number
-    const user = await User.findOne({ where: { phone } });
-
-    if (!user || user.verificationCode !== verificationCode) {
-      // Implement rate limiting here to prevent abuse
-      return res.status(401).json({ message: 'Invalid verification code' });
+    // Validate the incoming data
+    if (!firstName || !lastName || !BusinessName || !email) {
+      return res.status(400).json({ message: 'Missing required fields' });
     }
 
-    // Mark the user as verified in the database
-    user.isVerified = true;
-    user.verificationCode = null;
-    await user.save();
+    const user = await User.findOne({ where: { id: userId } });
 
-    // Log the successful verification
-    console.log(`Phone number ${phone} verified successfully`);
+    // Check if the user is authenticated
+    if (!user.isVerified) {
+      return res.status(401).json({ message: 'User Unauthorized' });
+    }
 
-    return res
-      .status(200)
-      .json({ message: 'Phone number verified successfully' });
+    // Update user information in the User table
+    // Generate password to be used in the database
+    const password = crypto.randomBytes(4).toString('hex');
+
+    // const updatedUser = await User.update(
+    //   {
+    //     firstName,
+    //     lastName
+    //   },
+    //   { where: { id: userId } }
+    // );
+
+    // Insert tenant configuration into the central database (bookkeeping_db.TenantConfigs)
+    await TenantConfig.create({
+      databaseName: firstName + lastName + userId + "_db",
+      username: firstName + lastName,
+      password: password,
+      host: process.env.HOST,
+      dialect: 'mysql',
+      userId: userId,
+    });
+
+    // Create a tenant database
+    createTenantDatabase(firstName + lastName + userId, firstName + lastName, password)
+      .then(() => {
+        console.log(`${firstName + lastName + userId} database created successfully`);
+      })
+      .catch((error) => {
+        console.error('Failed to create tenant database:', error);
+      });
+
+    // Create a new business record
+    // await Business.create({
+    //   BusinessName,
+    //   BusinessCAtegory,
+    //   BusinessDescription,
+    //   BusinessLogo,
+    //   stateOfResidence,
+    //   YearFounded, 
+    //   RegNo,
+    //   email,
+    //   TenantID: user.userId,
+    // });
+
+    return res.status(200).json({
+      message: `User information updated, and Database for  ${
+        firstName + lastName + userId
+      } created successfully`,
+    });
   } catch (error) {
-    console.error('Error during phone number verification:', error.message);
+    console.error('Error during user information update:', error.message);
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 };
 
+// Forgot password: Generate and send a reset code
 exports.forgotPassword = async (req, res) => {
   try {
     const { phone } = req.body;
 
-    // Find the user by email
+    // Find the user by phone number
     const user = await User.findOne({ where: { phone } });
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-
-    //Change is verified to false
-    user.isVerified = false;
-
-    /**********************This line of code is for sending verification via email */
-    // Generate a temporary reset code
-    // const resetToken = crypto.randomBytes(20).toString('hex');
-
-    // Set the reset token and expiration time in the user's record
-    // user.resetToken = resetToken;
-    // user.resetTokenExpiry = Date.now() + 3600000; // Token expires in 1 hour
-
-    // Send a password reset email to the user
-    // forgetPasswordEmail(req.headers.host, user.name, email, resetToken);
 
     // Generate a 6-digit verification code
     const verificationCode = generateVerificationCode();
@@ -350,12 +245,12 @@ exports.forgotPassword = async (req, res) => {
     // Save the user record
     await user.save();
 
-    //get last 4 digit of users phone numer
+    // Get the last 4 digits of the user's phone number
     const getLast4Digits = (phoneNumber) => phoneNumber.slice(-4);
 
     return res.status(200).json({
       message: `Password reset has been sent to ******${getLast4Digits(
-        phone,
+        phone
       )} phone number`,
     });
   } catch (error) {
@@ -364,6 +259,8 @@ exports.forgotPassword = async (req, res) => {
   }
 };
 
+
+// Reset password using the provided token
 exports.resetPassword = async (req, res) => {
   try {
     const { token } = req.params;
@@ -379,7 +276,7 @@ exports.resetPassword = async (req, res) => {
       },
     });
 
-    // if no user found or token expired
+    // If no user found or token expired
     if (!user) {
       return res.status(400).json({
         error: 'Invalid or expired token',
@@ -404,21 +301,5 @@ exports.resetPassword = async (req, res) => {
     });
   }
 };
-<<<<<<< HEAD
 
-exports.tests = async (req, res) => {
-  
-try { 
-  console.log('You are in the database now');
-    return res.status(500).json(
-      'You are in the database now'
-    );
-  } catch(err) {
-      console.log('Error resetting password', error);
-      return res.status(500).json({
-        error: 'An error occurred while resetting the password!',
-      });
-    }
-  }
-=======
->>>>>>> 719d2b9a5c100c52a16bac7aa5de4b2195b3760c
+

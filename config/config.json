@@ -1,11 +1,7 @@
 {
   "development": {
     "username": "root",
-<<<<<<< HEAD
     "password": "Ichaba@316",
-=======
-    "password": "35545177",
->>>>>>> 719d2b9a5c100c52a16bac7aa5de4b2195b3760c
     "database": "bookkeeping_db",
     "host": "127.0.0.1",
     "dialect": "mysql"
@@ -24,8 +20,4 @@
     "host": "127.0.0.1",
     "dialect": "mysql"
   }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 719d2b9a5c100c52a16bac7aa5de4b2195b3760c
