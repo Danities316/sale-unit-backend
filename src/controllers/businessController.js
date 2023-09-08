@@ -1,20 +1,7 @@
 const { Sequelize } = require('sequelize');
 const { Business } = require('../../models');
+const defineBusinessModel =  require('../../models/businessModel');
 
-
-// Define the Business model with attributes and relationships
-const defineBusinessModel = (tenantSequelize) => {
-  return tenantSequelize.define('Business', {
-    BusinessName: Sequelize.STRING,
-    BusinessCategory: Sequelize.STRING,
-    stateOfResidence: Sequelize.STRING,
-    YearFounded: Sequelize.DATE,
-    BusinessDescription: Sequelize.TEXT,
-    userId: Sequelize.INTEGER,
-    BusinessLogo: Sequelize.STRING,
-    RegNo: Sequelize.BOOLEAN,
-  });
-};
 
 exports.createBusiness = async (req, res) => {
   const { tenantSequelize } = req; // Get the tenant-specific Sequelize instance
@@ -26,9 +13,9 @@ exports.createBusiness = async (req, res) => {
     const BusinessModel = defineBusinessModel(tenantSequelize);
 
     // Synchronize the Business model with the tenant-specific database
-    await BusinessModel.sync();
+    // await BusinessModel.sync();
 
-    const newBusiness = await Business.create(req.body);
+    const newBusiness = await BusinessModel.create(req.body);
     // console.log("the body and the Business: " + newBusiness.BusinessName)
     res.status(201).json(newBusiness);
   } catch (error) {
@@ -39,8 +26,11 @@ exports.createBusiness = async (req, res) => {
 
 // Get all businesses
 exports.getAllBusinesses = async (req, res) => {
+  const { tenantSequelize } = req; // Get the tenant-specific Sequelize instance
+
+  const BusinessModel = defineBusinessModel(tenantSequelize);
   try {
-    const businesses = await Business.findAll();
+    const businesses = await BusinessModel.findAll();
     res.status(200).json(businesses);
   } catch (error) {
     console.error(error);
@@ -51,8 +41,11 @@ exports.getAllBusinesses = async (req, res) => {
 // Get a business by ID
 exports.getBusinessById = async (req, res) => {
   const { id } = req.params;
+  const { tenantSequelize } = req; // Get the tenant-specific Sequelize instance
+
+  const BusinessModel = defineBusinessModel(tenantSequelize);
   try {
-    const business = await Business.findByPk(id);
+    const business = await BusinessModel.findByPk(id);
     if (!business) {
       return res.status(404).json({ message: 'Business not found' });
     }
@@ -66,12 +59,15 @@ exports.getBusinessById = async (req, res) => {
 // Update a business by ID
 exports.updateBusinessById = async (req, res) => {
   const { id } = req.params;
+  const { tenantSequelize } = req; // Get the tenant-specific Sequelize instance
+
+  const BusinessModel = defineBusinessModel(tenantSequelize);
   try {
-    const [updated] = await Business.update(req.body, {
-      where: { BusinessID: id },
+    const [updated] = await BusinessModel.update(req.body, {
+      where: { id },
     });
     if (updated) {
-      const updatedBusiness = await Business.findByPk(id);
+      const updatedBusiness = await BusinessModel.findByPk(id);
       return res.status(200).json(updatedBusiness);
     }
     return res.status(404).json({ message: 'Business not found' });
@@ -84,12 +80,15 @@ exports.updateBusinessById = async (req, res) => {
 // Delete a business by ID
 exports.deleteBusinessById = async (req, res) => {
   const { id } = req.params;
+  const { tenantSequelize } = req; // Get the tenant-specific Sequelize instance
+
+  const BusinessModel = defineBusinessModel(tenantSequelize);
   try {
-    const deleted = await Business.destroy({
-      where: { BusinessID: id },
+    const deleted = await BusinessModel.destroy({
+      where: { id },
     });
     if (deleted) {
-      return res.status(204).send();
+      return res.status(204).send("Business has been deleted successfully");
     }
     return res.status(404).json({ message: 'Business not found' });
   } catch (error) {

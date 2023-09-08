@@ -1,24 +1,23 @@
-const { Model, DataTypes } = require('sequelize');
+'use strict';
+const { Model,  DataTypes } = require('sequelize');
+const Business = require('./businessModel'); 
 
 module.exports = (sequelize) => {
-  class User extends Model {
+  class Staff extends Model {
     static associate(models) {
       // Define associations here if applicable
       // For example: this.hasMany(models.Post, { foreignKey: 'userId' });
+      Staff.belongsTo(Business, { foreignKey: 'id' });
     }
   }
 
-  User.init(
+  Staff.init(
     {
       firstName: DataTypes.STRING,
       lastName: DataTypes.STRING,
-      password: DataTypes.STRING,
-      isVerified: DataTypes.BOOLEAN,
-      businessName: DataTypes.STRING,
-      RegNo: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false,
-      },
+      jobTitle: DataTypes.STRING,
+      status: DataTypes.BOOLEAN,
+      Role: DataTypes.STRING,
       email: {
         type: DataTypes.STRING,
         allowNull: true,
@@ -27,19 +26,16 @@ module.exports = (sequelize) => {
           isEmail: true, // Validates email format
         },
       },
-      phone: {
+      phoneNumber: {
         type: DataTypes.STRING,
         allowNull: false,
       },
-      verificationCode: DataTypes.STRING,
-      resetToken: DataTypes.STRING,
-      resetTokenExpiry: DataTypes.DATE,
     },
     {
       sequelize,
-      modelName: 'User',
+      modelName: 'Staff',
     }
   );
 
-  return User;
+  return Staff;
 };

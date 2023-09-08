@@ -2,8 +2,16 @@ const sequelize = require('../../config/database');
 const { QueryTypes, Sequelize } = require('sequelize');
 const { masterSequelize } = require('../../config/database'); // Import the master instance
 const { TenantConfig } = require('../../models'); // Import the TenantConfig model
-const { Business } = require('../../models');
-
+const defineBusinessModel =  require('../../models/businessModel');
+const defineCustomerModel =  require('../../models/customerModel');
+const defineDebtModel =  require('../../models/debtModel');
+const defineExpenseModel =  require('../../models/expenseModel');
+const defineNotificationModel =  require('../../models/notificationModel');
+const defineProductModel =  require('../../models/productModel');
+const definePurchaseModel =  require('../../models/purchaseModel');
+const defineSaleModel =  require('../../models/saleModel');
+const defineStaffModel =  require('../../models/staffModel');
+const defineUserModel =  require('../../models/userModel');
 // Function to create a new tenant database
 const createTenantDatabase = async (databaseName, username, password) => {
   try {
@@ -26,6 +34,23 @@ await masterSequelize.query(`
 
 // Reload privileges to apply the changes
 await masterSequelize.query('FLUSH PRIVILEGES;', { multiQuery: true });
+
+const BusinessModel = defineBusinessModel(tenantSequelize);
+const CustomerModel = defineCustomerModel(tenantSequelize);
+const DebtModel = defineDebtModel(tenantSequelize);
+const ExpenseModel = defineExpenseModel(tenantSequelize);
+const NotificationModel = defineNotificationModel(tenantSequelize);
+const ProductModel = defineProductModel(tenantSequelize);
+const PurchaseModel = definePurchaseModel(tenantSequelize);
+const SaleModel = defineSaleModel(tenantSequelize);
+const StaffModel = defineStaffModel(tenantSequelize);
+const UserModel = defineUserModel(tenantSequelize);
+
+// Synchronize the table models with the database
+await tenantSequelize.sync();
+
+console.log('Tables created successfully in the tenant-specific database.');
+
 
   } catch (error) {
     console.error('Failed to create tenant database:', error);
