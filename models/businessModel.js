@@ -14,15 +14,16 @@ module.exports = (sequelize) => {
   class Business extends Model {
     static associate(models) {
       // Define other associations here
+      // Business.hasMany(models.Customer, { foreignKey: 'id' });
+      // Business.hasMany(models.Sale, { foreignKey: 'id' });
+      // Business.hasMany(models.Debt, { foreignKey: 'id' });
+      // Business.hasMany(models.Expense, { foreignKey: 'id' });
+      // Business.hasMany(models.Purchase, { foreignKey: 'id' });
+      // Business.hasMany(models.Product, { foreignKey: 'id' });
+      // Business.hasMany(models.Notification, { foreignKey: 'id' });
+      // Business.hasMany(models.Staff, { foreignKey: 'id' });
 
-      Business.hasMany(sequelize.models.Customer, { foreignKey: 'id' });
-      Business.hasMany(sequelize.models.Sale, { foreignKey: 'id' });
-      Business.hasMany(sequelize.models.Debt, { foreignKey: 'id' });
-      Business.hasMany(sequelize.models.Expense, { foreignKey: 'id' });
-      Business.hasMany(sequelize.models.Purchase, { foreignKey: 'id' });
-      Business.hasMany(sequelize.models.Product, { foreignKey: 'id' });
-      Business.hasMany(sequelize.models.Notification, { foreignKey: 'id' });
-      Business.hasMany(sequelize.models.Staff, { foreignKey: 'id' });
+    
     }
   }
   Business.init(
@@ -49,15 +50,17 @@ module.exports = (sequelize) => {
     }
   );
 
+
+
   // Define a foreign key constraint for the TenantID column
-  sequelize.query(`
-    ALTER TABLE \`Business\`
-    ADD CONSTRAINT \`business_tenant_user_fk\`
-    FOREIGN KEY (\`TenantID\`)
-    REFERENCES \`${masterSequelize.bookkeeping_db}\`.\`Users\` (\`id\`)
-    ON DELETE CASCADE
-    ON UPDATE CASCADE;
-  `);
+  // sequelize.query(`
+  //   ALTER TABLE \`businesses\`
+  //   ADD CONSTRAINT \`business_tenant_user_fk\`
+  //   FOREIGN KEY (\`TenantID\`)
+  //   REFERENCES \`bookkeeping_db\`.\`Users\` (\`id\`)
+  //   ON DELETE CASCADE
+  //   ON UPDATE CASCADE;
+  // `);
 
   return Business;
 };

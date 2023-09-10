@@ -22,6 +22,7 @@ dotenv.config();
 const tenantMiddleware = require('./src/middleware/tenantMiddleware');
 const authRoutes = require('./src/routes/authRoutes');
 const businessRoutes = require('./src/routes/businnessRoutes');
+const salesRoutes = require('./src/routes/salesRoutes');
 
 // Test the master database connection
 masterSequelize
@@ -70,6 +71,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Routes Define API routes here
 app.use('/api/auth', authRoutes);
 app.use('/api/business', businessRoutes);
+app.use('/api/sales', salesRoutes);
 
 // Serve Swagger UI at /api-docs
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));

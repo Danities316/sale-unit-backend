@@ -1,21 +1,53 @@
 const { Sequelize } = require('sequelize');
 const { Business } = require('../../models');
 const defineBusinessModel =  require('../../models/businessModel');
+// const Business =  require('../../models/businessModel');
 
 
 exports.createBusiness = async (req, res) => {
   const { tenantSequelize } = req; // Get the tenant-specific Sequelize instance
-  // console.log("show DB: ",  tenantSequelize)
- 
+  const { userId } = req.user.userId;
+  // console.log("show DB: ",  req)
 
   try {
+    const existingBusinessCount = await BusinessModel.count({
+      where: {
+        userId: userId,
+      },
+    });
+
+    if (existingBusinessCount >= 3) {
+      return res.status(400).json({
+        message: 'You have reached the maximum limit of 3 businesses per user.',
+      });
+    }
+    
+    const {BusinessName,
+      BusinessCategory,
+      stateOfResidence,
+      YearFounded,
+      BusinessDescription,
+      BusinessLogo,
+      RegNo,
+      } = req.body 
     // Define the Business model for the current tenant
     const BusinessModel = defineBusinessModel(tenantSequelize);
 
     // Synchronize the Business model with the tenant-specific database
     // await BusinessModel.sync();
 
-    const newBusiness = await BusinessModel.create(req.body);
+    // const newBusiness = await BusinessModel.create();
+    const newBusiness = await BusinessModel.create({
+      BusinessName,
+      BusinessCategory,
+      stateOfResidence,
+      YearFounded,
+      BusinessDescription,
+      userId: userId,
+      BusinessLogo,
+      RegNo,
+
+  });
     // console.log("the body and the Business: " + newBusiness.BusinessName)
     res.status(201).json(newBusiness);
   } catch (error) {

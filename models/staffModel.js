@@ -6,8 +6,7 @@ module.exports = (sequelize) => {
   class Staff extends Model {
     static associate(models) {
       // Define associations here if applicable
-      // For example: this.hasMany(models.Post, { foreignKey: 'userId' });
-      Staff.belongsTo(Business, { foreignKey: 'id' });
+      Staff.belongsTo(models.Business, { foreignKey: 'id' });
     }
   }
 
@@ -36,6 +35,5 @@ module.exports = (sequelize) => {
       modelName: 'Staff',
     }
   );
-
   return Staff;
 };

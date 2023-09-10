@@ -9,8 +9,8 @@ module.exports = (sequelize) => {
   class Purchase extends Model {
     static associate(models) {
       // Define other associations here
-      Purchase.belongsTo(Business, { foreignKey: 'id' });
-      Purchase.belongsTo(Product, { foreignKey: 'id' });
+      Purchase.belongsTo(models.Business, { foreignKey: 'id' });
+      Purchase.belongsTo(models.Product, { foreignKey: 'id' });
 
     }
   }
@@ -31,6 +31,5 @@ module.exports = (sequelize) => {
       modelName: 'Purchase',
     }
   );
-
   return Purchase;
 };

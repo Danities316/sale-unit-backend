@@ -19,4 +19,6 @@ router.post('/login', AuthController.loginUser);
 // Forgot password route
 router.post('/forgot-password', AuthController.forgotPassword);
 
+router.get("/test", authenticateJWT, switchTenant, AuthController.test);
+
 module.exports = router;

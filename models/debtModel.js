@@ -9,8 +9,8 @@ module.exports = (sequelize) => {
   class Debt extends Model {
     static associate(models) {
       // Define other associations here
-      Debt.belongsTo(Customer, { foreignKey: 'id' });
-      Debt.belongsTo(Business, { foreignKey: 'id' });
+      // Debt.belongsTo(models.Customer, { foreignKey: 'id' });
+      // Debt.belongsTo(models.Business, { foreignKey: 'id' });
 
     }
   }

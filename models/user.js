@@ -15,10 +15,7 @@ module.exports = (sequelize) => {
       password: DataTypes.STRING,
       isVerified: DataTypes.BOOLEAN,
       businessName: DataTypes.STRING,
-      RegNo: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false,
-      },
+      CAC: DataTypes.BOOLEAN,
       email: {
         type: DataTypes.STRING,
         allowNull: true,

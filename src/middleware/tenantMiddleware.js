@@ -1,7 +1,6 @@
-const sequelize = require('../../config/database');
-const { QueryTypes, Sequelize } = require('sequelize');
 const { masterSequelize } = require('../../config/database'); // Import the master instance
 const { TenantConfig } = require('../../models'); // Import the TenantConfig model
+const Sequelize = require('sequelize');
 const defineBusinessModel =  require('../../models/businessModel');
 const defineCustomerModel =  require('../../models/customerModel');
 const defineDebtModel =  require('../../models/debtModel');
@@ -35,6 +34,18 @@ await masterSequelize.query(`
 // Reload privileges to apply the changes
 await masterSequelize.query('FLUSH PRIVILEGES;', { multiQuery: true });
 
+ // Create a new Sequelize instance for the tenant-specific database
+ const tenantSequelize = new Sequelize(
+  `${databaseName}_db`, 
+  username,
+  password,
+  {
+    host: 'localhost', 
+    dialect: 'mysql',
+   
+  }
+);
+// Define models and synchronize them with the tenant-specific database
 const BusinessModel = defineBusinessModel(tenantSequelize);
 const CustomerModel = defineCustomerModel(tenantSequelize);
 const DebtModel = defineDebtModel(tenantSequelize);
@@ -54,7 +65,7 @@ console.log('Tables created successfully in the tenant-specific database.');
 
   } catch (error) {
     console.error('Failed to create tenant database:', error);
-    return res.status(500).json("Failed to create tenant database");
+    throw error;
   }
 };
 
@@ -91,7 +102,7 @@ const switchTenant = async (req, res, next) => {
     await tenantSequelize.authenticate();
 
 
-    await Business.sync();
+    // await Business.sync();
 
 
     // Replace the default Sequelize instance with the tenant-specific one

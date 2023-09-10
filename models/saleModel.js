@@ -9,8 +9,8 @@ module.exports = (sequelize) => {
   class Sale extends Model {
     static associate(models) {
       // Define other associations here
-      Sale.belongsTo(Business, { foreignKey: 'id' });
-      Sale.belongsTo(Product, { foreignKey: 'id' });
+      Sale.belongsTo(models.Business, { foreignKey: 'id' });
+      Sale.belongsTo(models.Product, { foreignKey: 'id' });
 
     }
   }
@@ -25,10 +25,24 @@ module.exports = (sequelize) => {
       totalPrice: DataTypes.FLOAT,
       quantity: DataTypes.INTEGER,
       Debt: DataTypes.BOOLEAN,
+      userId:   {
+        type: DataTypes.INTEGER,
+        references: {
+          model: 'Users',
+          key: 'id',
+        },
+      },
+      businessID:  {
+        type: DataTypes.INTEGER,
+        references: {
+          model: 'businesses',
+          key: 'id',
+        },
+      },
       productID: {
         type: DataTypes.INTEGER,
         references: {
-          model: 'Product',
+          model: 'Products',
           key: 'id',
         },
       },

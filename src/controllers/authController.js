@@ -14,7 +14,8 @@ const {
   switchTenant
 } = require('../../src/middleware/tenantMiddleware');
 const { TenantConfig } = require('../../models');
-const { Business } = require('../../models');
+// const { Business } = require('../../models');
+const defineBusinessModel =  require('../../models/businessModel');
 
 dotenv.config();
 
@@ -56,18 +57,18 @@ exports.registerUser = async (req, res) => {
     // Generate a 6-digit verification code
     const verificationCode = generateVerificationCode();
 
-    // Send the verification code via SMS using Twilio
-    try {
-      await sendVerificationCode(phone, verificationCode);
-    } catch (twilioError) {
-      console.error('Error sending SMS via Twilio:', twilioError.stack);
-      return res.status(500).json({ message: 'Error sending SMS via Twilio' });
-    }
+        // Send the verification code via SMS using Twilio
+        try {
+          await sendVerificationCode(phone, verificationCode);
+        } catch (twilioError) {
+          console.error('Error sending SMS via Twilio:', twilioError.stack);
+          return res.status(500).json({ message: 'Error sending SMS via Twilio' });
+        }
 
     // Hash the password before storing it
     const hashedPassword = bcrypt.hashSync(password, 10);
 
-    // Create a new user record with verification code
+    // Create a new user record with verification code and password
     const newUser = await User.create({
       password: hashedPassword,
       phone,
@@ -84,6 +85,7 @@ exports.registerUser = async (req, res) => {
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 };
+
 
 exports.verifyPhoneNumber = async (req, res) => {
   try {
@@ -141,6 +143,13 @@ exports.loginUser = async (req, res) => {
 exports.updateUserInfo = async (req, res) => {
   const userId = req.user.userId; // Coming from the jwt token;
 
+  if(!userId){
+    console.log("No user found");
+    res.status(404).json({
+      msg: "No User Found!"
+    })
+  }
+
   try {
     const   {
       firstName,
@@ -151,7 +160,7 @@ exports.updateUserInfo = async (req, res) => {
       BusinessLogo,
       stateOfResidence,
       YearFounded, 
-      RegNo,
+      CAC,
       email,
     } =
       req.body;
@@ -172,13 +181,13 @@ exports.updateUserInfo = async (req, res) => {
     // Generate password to be used in the database
     const password = crypto.randomBytes(4).toString('hex');
 
-    // const updatedUser = await User.update(
-    //   {
-    //     firstName,
-    //     lastName
-    //   },
-    //   { where: { id: userId } }
-    // );
+    const updatedUser = await User.update(
+      {
+        firstName,
+        lastName
+      },
+      { where: { id: userId } }
+    );
 
     // Insert tenant configuration into the central database (bookkeeping_db.TenantConfigs)
     await TenantConfig.create({
@@ -199,18 +208,23 @@ exports.updateUserInfo = async (req, res) => {
         console.error('Failed to create tenant database:', error);
       });
 
+      const { tenantSequelize } = req; // Get the tenant-specific Sequelize instance
+      
+      // Define the Business model for the current tenant
+      const Business = defineBusinessModel(tenantSequelize);
+
     // Create a new business record
-    // await Business.create({
-    //   BusinessName,
-    //   BusinessCAtegory,
-    //   BusinessDescription,
-    //   BusinessLogo,
-    //   stateOfResidence,
-    //   YearFounded, 
-    //   RegNo,
-    //   email,
-    //   TenantID: user.userId,
-    // });
+    await Business.create({
+      BusinessName,
+      BusinessCAtegory,
+      BusinessDescription,
+      BusinessLogo,
+      stateOfResidence,
+      YearFounded, 
+      CAC,
+      email,
+      TenantID: user.userId,
+    });
 
     return res.status(200).json({
       message: `User information updated, and Database for  ${
@@ -302,4 +316,11 @@ exports.resetPassword = async (req, res) => {
   }
 };
 
+
+exports.test = (req, res) => {
+  console.log("you are in your database now")
+  res.json({
+    msg: "You are in your database now"
+  })
+}
 

@@ -8,7 +8,7 @@ module.exports = (sequelize) => {
   class Product extends Model {
     static associate(models) {
       // Define other associations here
-      Product.belongsTo(Business, { foreignKey: 'id' });
+      // Product.belongsTo(models.Business, { foreignKey: 'id' });
 
     }
   }
@@ -28,6 +28,7 @@ module.exports = (sequelize) => {
       modelName: 'Product',
     }
   );
+
 
   return Product;
 };

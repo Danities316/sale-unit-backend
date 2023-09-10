@@ -9,8 +9,8 @@ module.exports = (sequelize) => {
   class Notification extends Model {
     static associate(models) {
       // Define other associations here
-      Notification.belongsTo(User, { foreignKey: 'id' });
-      Notification.belongsTo(Business, { foreignKey: 'id' });
+      // Notification.belongsTo(models.User, { foreignKey: 'id' });
+      // Notification.belongsTo(models.Business, { foreignKey: 'id' });
 
     }
   }
