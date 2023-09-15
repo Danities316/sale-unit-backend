@@ -5,7 +5,7 @@ info:
   description: API for user authentication, password reset, and related functionalities.
 
 servers:
-  - url: http://localhost:3000 # Update with your API server URL
+  - url: http://localhost:3000 # Update with our correct API server URL
     description: Local development server
 
 paths:
@@ -96,18 +96,31 @@ paths:
         '500':
           description: Internal Server Error.
 
+  /api/auth/verify-phone:
+    post:
+      tags:
+        - Authentication
+      summary: Verify user's phone number with a verification code.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyPhoneNumberRequest'
+      responses:
+        '200':
+          description: Phone number verified successfully.
+        '401':
+          description: Unauthorized, invalid verification code or phone number.
+        '500':
+          description: Internal Server Error.
+
 components:
   schemas:
     UserRegistration:
       type: object
       properties:
-        name:
-          type: string
-        username:
-          type: string
         password:
-          type: string
-        email:
           type: string
         phone:
           type: string
@@ -121,10 +134,17 @@ components:
     ForgotPasswordRequest:
       type: object
       properties:
-        email:
+        phone:
           type: string
     ResetPasswordRequest:
       type: object
       properties:
         password:
+          type: string
+    VerifyPhoneNumberRequest:
+      type: object
+      properties:
+        phone:
+          type: string
+        verificationCode:
           type: string

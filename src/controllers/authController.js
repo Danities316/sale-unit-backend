@@ -188,7 +188,6 @@ exports.updateUserInfo = async (req, res) => {
       return res.status(401).json({ message: 'User Unauthorized' });
     }
 
-    // Update user information in the User table
     // Generate password to be used in the database
     const password = crypto.randomBytes(4).toString('hex');
 
@@ -217,26 +216,6 @@ exports.updateUserInfo = async (req, res) => {
       firstName + lastName,
       password,
     );
-    // try {
-    //   await createTenantDatabase(
-    //     firstName + lastName + userId,
-    //     firstName + lastName,
-    //     password,
-    //   );
-    // } catch (dbError) {
-    //   console.error('Error creating tenant database:', dbError.message);
-    //   return res
-    //     .status(500)
-    //     .json({ message: 'Failed to create tenant database' });
-    // }
-
-    // console.log('Ther is the sequelize: ', createTenantDatabase);
-
-    // Define the Business model for the current tenant
-
-    // console.log('THis is the business part: ', Business);
-
-    // Create a new business record
 
     // const Business = defineBusinessModel(tenantSequelize);
     // const TenantUser = defineUserModel(tenantSequelize);

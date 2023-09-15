@@ -13,7 +13,7 @@ const fs = require('fs');
 const { masterSequelize } = require('./config/database');
 const swaggerUi = require('swagger-ui-express');
 const jsyaml = require('js-yaml');
-const spec = fs.readFileSync('swagger.yaml', 'utf8');
+const spec = fs.readFileSync('swagger/swagger.yaml', 'utf8');
 const swaggerSpec = jsyaml.load(spec); // Import your Swagger specification
 
 const app = express();
