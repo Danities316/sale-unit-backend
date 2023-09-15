@@ -1,9 +1,8 @@
 'use strict';
 const { Model, DataTypes } = require('sequelize');
 const { masterSequelize } = require('../config/database'); // Import the master instance
-const Purchase = require('./purchaseModel'); 
-const Business = require('./businessModel'); 
-
+const Purchase = require('./purchaseModel');
+const Business = require('./businessModel');
 
 module.exports = (sequelize) => {
   class Sale extends Model {
@@ -11,12 +10,11 @@ module.exports = (sequelize) => {
       // Define other associations here
       Sale.belongsTo(models.Business, { foreignKey: 'id' });
       Sale.belongsTo(models.Product, { foreignKey: 'id' });
-
     }
   }
   Sale.init(
     {
-      paymentMethod: DataTypes.ENUM("Transfer", "Card", "Cash"),
+      paymentMethod: DataTypes.ENUM('Transfer', 'Card', 'Cash'),
       invoiceNumber: DataTypes.STRING,
       saleDate: DataTypes.DATE,
       note: DataTypes.TEXT,
@@ -25,33 +23,25 @@ module.exports = (sequelize) => {
       totalPrice: DataTypes.FLOAT,
       quantity: DataTypes.INTEGER,
       Debt: DataTypes.BOOLEAN,
-      userId:   {
-        type: DataTypes.INTEGER,
-        references: {
-          model: 'Users',
-          key: 'id',
-        },
-      },
-      businessID:  {
+      businessId: {
         type: DataTypes.INTEGER,
         references: {
           model: 'businesses',
           key: 'id',
         },
       },
-      productID: {
+      productId: {
         type: DataTypes.INTEGER,
         references: {
           model: 'Products',
           key: 'id',
         },
       },
-
     },
     {
       sequelize,
       modelName: 'Sale',
-    }
+    },
   );
 
   return Sale;

@@ -1,16 +1,17 @@
 const { masterSequelize } = require('../../config/database'); // Import the master instance
 const { TenantConfig } = require('../../models'); // Import the TenantConfig model
 const Sequelize = require('sequelize');
-const defineBusinessModel =  require('../../models/businessModel');
-const defineCustomerModel =  require('../../models/customerModel');
-const defineDebtModel =  require('../../models/debtModel');
-const defineExpenseModel =  require('../../models/expenseModel');
-const defineNotificationModel =  require('../../models/notificationModel');
-const defineProductModel =  require('../../models/productModel');
-const definePurchaseModel =  require('../../models/purchaseModel');
-const defineSaleModel =  require('../../models/saleModel');
-const defineStaffModel =  require('../../models/staffModel');
-const defineUserModel =  require('../../models/userModel');
+const defineBusinessModel = require('../../models/businessModel');
+const defineCustomerModel = require('../../models/customerModel');
+const defineDebtModel = require('../../models/debtModel');
+const defineExpenseModel = require('../../models/expenseModel');
+const defineNotificationModel = require('../../models/notificationModel');
+const defineProductModel = require('../../models/productModel');
+const definePurchaseModel = require('../../models/purchaseModel');
+const defineSaleModel = require('../../models/saleModel');
+const defineStaffModel = require('../../models/staffModel');
+const defineUserModel = require('../../models/userModel');
+const { User } = require('../../models');
 // Function to create a new tenant database
 const createTenantDatabase = async (databaseName, username, password) => {
   try {
@@ -19,50 +20,83 @@ const createTenantDatabase = async (databaseName, username, password) => {
       `CREATE DATABASE IF NOT EXISTS ${databaseName}_db
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
-       `);
+       `,
+    );
 
-  // Create a user with privileges for the new database
-await masterSequelize.query(`
+    // Create a user with privileges for the new database
+    await masterSequelize.query(
+      `
 CREATE USER '${username}'@'localhost' IDENTIFIED BY '${password}';
-`, { multiQuery: true }); // multiQuery: true allow multiple statemenent otbe run on mysql
+`,
+      { multiQuery: true },
+    ); // multiQuery: true allow multiple statemenent otbe run on mysql
 
-// Grant privileges to the user for the new database
-await masterSequelize.query(`
+    // Grant privileges to the user for the new database
+    await masterSequelize.query(
+      `
   GRANT ALL PRIVILEGES ON ${databaseName}_db.* TO '${username}'@'localhost';
-`, { multiQuery: true }); 
+`,
+      { multiQuery: true },
+    );
 
-// Reload privileges to apply the changes
-await masterSequelize.query('FLUSH PRIVILEGES;', { multiQuery: true });
+    // Reload privileges to apply the changes
+    await masterSequelize.query('FLUSH PRIVILEGES;', { multiQuery: true });
 
- // Create a new Sequelize instance for the tenant-specific database
- const tenantSequelize = new Sequelize(
-  `${databaseName}_db`, 
-  username,
-  password,
-  {
-    host: 'localhost', 
-    dialect: 'mysql',
-   
-  }
-);
-// Define models and synchronize them with the tenant-specific database
-const BusinessModel = defineBusinessModel(tenantSequelize);
-const CustomerModel = defineCustomerModel(tenantSequelize);
-const DebtModel = defineDebtModel(tenantSequelize);
-const ExpenseModel = defineExpenseModel(tenantSequelize);
-const NotificationModel = defineNotificationModel(tenantSequelize);
-const ProductModel = defineProductModel(tenantSequelize);
-const PurchaseModel = definePurchaseModel(tenantSequelize);
-const SaleModel = defineSaleModel(tenantSequelize);
-const StaffModel = defineStaffModel(tenantSequelize);
-const UserModel = defineUserModel(tenantSequelize);
+    // Create a new Sequelize instance for the tenant-specific database
+    const tenantSequelize = new Sequelize(
+      `${databaseName}_db`,
+      username,
+      password,
 
-// Synchronize the table models with the database
-await tenantSequelize.sync();
+      {
+        host: 'localhost',
+        dialect: 'mysql',
+        logging: console.log,
+      },
+    );
+    // Fetch all existing users from the main database
+    const UserModel = defineUserModel(tenantSequelize);
 
-console.log('Tables created successfully in the tenant-specific database.');
+    // Define models and synchronize them with the tenant-specific database
+    // const UserModel = defineUserModel(tenantSequelize);
+    const BusinessModel = defineBusinessModel(tenantSequelize);
+    const CustomerModel = defineCustomerModel(tenantSequelize);
+    const DebtModel = defineDebtModel(tenantSequelize);
+    const ExpenseModel = defineExpenseModel(tenantSequelize);
+    const NotificationModel = defineNotificationModel(tenantSequelize);
+    const ProductModel = defineProductModel(tenantSequelize);
+    const PurchaseModel = definePurchaseModel(tenantSequelize);
+    const SaleModel = defineSaleModel(tenantSequelize);
+    const StaffModel = defineStaffModel(tenantSequelize);
 
+    // Synchronize the table models with the database
+    await tenantSequelize.sync();
 
+    const mainUsers = await User.findAll();
+    console.log('mainUsers:', mainUsers);
+
+    if (Array.isArray(mainUsers) && mainUsers.length > 0) {
+      for (let mainUser of mainUsers) {
+        await UserModel.create({
+          firstName: mainUser.firstName,
+          lastName: mainUser.lastName,
+          password: mainUser.password,
+          isVerified: mainUser.isVerified,
+          RegNo: mainUser.RegNo,
+          email: mainUser.email,
+          phone: mainUser.phone,
+          verificationCode: mainUser.verificationCode,
+          resetToken: mainUser.resetToken,
+          resetTokenExpiry: mainUser.resetTokenExpiry,
+          defaultBusinessId: mainUser.defaultBusinessId,
+        });
+      }
+    } else {
+      console.log('No mainUsers found.');
+    }
+
+    console.log('Tables created successfully in the tenant-specific database.');
+    return tenantSequelize;
   } catch (error) {
     console.error('Failed to create tenant database:', error);
     throw error;
@@ -71,14 +105,12 @@ console.log('Tables created successfully in the tenant-specific database.');
 
 const switchTenant = async (req, res, next) => {
   const { userId } = req.user;
- 
 
   try {
     // Fetch the tenant-specific configuration from the database
     const tenantConfig = await TenantConfig.findOne({
       where: { userId: userId },
     });
-
 
     if (!tenantConfig) {
       return res.status(404).json({ message: 'Tenant not found' });
@@ -94,16 +126,14 @@ const switchTenant = async (req, res, next) => {
       tenantConfig.password,
       {
         host: tenantConfig.host,
-        dialect: 'mysql', 
+        dialect: 'mysql',
       },
     );
 
     // Authenticate with the tenant-specific database
     await tenantSequelize.authenticate();
 
-
     // await Business.sync();
-
 
     // Replace the default Sequelize instance with the tenant-specific one
     //This means that all subsequent database operations
@@ -113,12 +143,11 @@ const switchTenant = async (req, res, next) => {
     next();
   } catch (error) {
     console.error('Failed to switch tenant:', error);
-    return res.status(500).json({ message: 'Internal Server Error, there is an error swiwting Tenants database' });
-
+    return res.status(500).json({
+      message:
+        'Internal Server Error, there is an error swiwting Tenants database',
+    });
   }
-}
-
-
-
+};
 
 module.exports = { switchTenant, createTenantDatabase };

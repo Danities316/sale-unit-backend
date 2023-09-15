@@ -14,11 +14,11 @@ router.post('/verify-phone', AuthController.verifyPhoneNumber);
 router.post('/update-user', authenticateJWT, AuthController.updateUserInfo);
 
 // Login route
-router.post('/login', AuthController.loginUser);
+router.post('/login', authenticateJWT, switchTenant, AuthController.loginUser);
 
 // Forgot password route
 router.post('/forgot-password', AuthController.forgotPassword);
 
-router.get("/test", authenticateJWT, switchTenant, AuthController.test);
+router.get('/test', authenticateJWT, switchTenant, AuthController.test);
 
 module.exports = router;

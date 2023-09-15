@@ -1,5 +1,6 @@
 'use strict';
 const { Model } = require('sequelize');
+const { masterSequelize } = require('../config/database'); // Import the master instance
 module.exports = (sequelize, DataTypes) => {
   class TenantConfig extends Model {
     /**
@@ -18,10 +19,9 @@ module.exports = (sequelize, DataTypes) => {
       password: DataTypes.STRING,
       host: DataTypes.STRING,
       userId: DataTypes.INTEGER,
-      
     },
     {
-      sequelize,
+      sequelize: masterSequelize,
       modelName: 'TenantConfig',
     },
   );

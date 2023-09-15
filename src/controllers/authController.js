@@ -3,6 +3,9 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { User } = require('../../models');
+const defineUserModel = require('../../models/userModel');
+// const { TenantUser } = require('../../models');
+// const TenantUser = userModel(sequelize, Sequelize);
 const {
   forgetPasswordEmail,
   sendConfirmationEmail,
@@ -11,11 +14,12 @@ const sendVerificationCode = require('../../utils/twilio');
 const dotenv = require('dotenv');
 const {
   createTenantDatabase,
-  switchTenant
+  switchTenant,
 } = require('../../src/middleware/tenantMiddleware');
 const { TenantConfig } = require('../../models');
+const { urlencoded } = require('body-parser');
 // const { Business } = require('../../models');
-const defineBusinessModel =  require('../../models/businessModel');
+// const defineBusinessModel = require('../../models/businessModel');
 
 dotenv.config();
 
@@ -56,14 +60,15 @@ exports.registerUser = async (req, res) => {
 
     // Generate a 6-digit verification code
     const verificationCode = generateVerificationCode();
+    console.log('verificationCode: ', verificationCode);
 
-        // Send the verification code via SMS using Twilio
-        try {
-          await sendVerificationCode(phone, verificationCode);
-        } catch (twilioError) {
-          console.error('Error sending SMS via Twilio:', twilioError.stack);
-          return res.status(500).json({ message: 'Error sending SMS via Twilio' });
-        }
+    // Send the verification code via SMS using Twilio
+    // try {
+    //   await sendVerificationCode(phone, verificationCode);
+    // } catch (twilioError) {
+    //   console.error('Error sending SMS via Twilio:', twilioError.stack);
+    //   return res.status(500).json({ message: 'Error sending SMS via Twilio' });
+    // }
 
     // Hash the password before storing it
     const hashedPassword = bcrypt.hashSync(password, 10);
@@ -86,7 +91,6 @@ exports.registerUser = async (req, res) => {
   }
 };
 
-
 exports.verifyPhoneNumber = async (req, res) => {
   try {
     const { phone, verificationCode } = req.body;
@@ -94,9 +98,15 @@ exports.verifyPhoneNumber = async (req, res) => {
     // Find the user by phone number
     const user = await User.findOne({ where: { phone } });
 
-    if (!user || user.verificationCode !== verificationCode) {
+    if (
+      !user ||
+      user.verificationCode !== verificationCode ||
+      user.phone !== phone
+    ) {
       // Implement rate limiting here to prevent abuse
-      return res.status(401).json({ message: 'Invalid verification code' });
+      return res
+        .status(401)
+        .json({ message: 'Invalid verification code or phone number' });
     }
 
     // Mark the user as verified in the database
@@ -142,31 +152,32 @@ exports.loginUser = async (req, res) => {
 // Update user information
 exports.updateUserInfo = async (req, res) => {
   const userId = req.user.userId; // Coming from the jwt token;
+  console.log('userId: ', userId);
 
-  if(!userId){
-    console.log("No user found");
-    res.status(404).json({
-      msg: "No User Found!"
-    })
+  if (userId === null) {
+    console.log('No user found');
+    return res.status(404).json({
+      msg: 'No User Found!',
+    });
   }
 
   try {
-    const   {
+    const {
       firstName,
       lastName,
-      BusinessName,
-      BusinessCAtegory,
-      BusinessDescription,
-      BusinessLogo,
-      stateOfResidence,
-      YearFounded, 
-      CAC,
+      // businessName,
+      // businessCategory,
+      // businessDescription,
+      // businessLogo,
+      // stateOfResidence,
+      // yearFounded,
+      // City,
+      // RegNo,
       email,
-    } =
-      req.body;
+    } = req.body;
 
     // Validate the incoming data
-    if (!firstName || !lastName || !BusinessName || !email) {
+    if (!firstName || !lastName || !email) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
@@ -181,17 +192,18 @@ exports.updateUserInfo = async (req, res) => {
     // Generate password to be used in the database
     const password = crypto.randomBytes(4).toString('hex');
 
-    const updatedUser = await User.update(
+    await User.update(
       {
         firstName,
-        lastName
+        lastName,
+        email,
       },
-      { where: { id: userId } }
+      { where: { id: userId } },
     );
 
     // Insert tenant configuration into the central database (bookkeeping_db.TenantConfigs)
     await TenantConfig.create({
-      databaseName: firstName + lastName + userId + "_db",
+      databaseName: firstName + lastName + userId + '_db',
       username: firstName + lastName,
       password: password,
       host: process.env.HOST,
@@ -200,31 +212,48 @@ exports.updateUserInfo = async (req, res) => {
     });
 
     // Create a tenant database
-    createTenantDatabase(firstName + lastName + userId, firstName + lastName, password)
-      .then(() => {
-        console.log(`${firstName + lastName + userId} database created successfully`);
-      })
-      .catch((error) => {
-        console.error('Failed to create tenant database:', error);
-      });
+    const tenantSequelize = await createTenantDatabase(
+      firstName + lastName + userId,
+      firstName + lastName,
+      password,
+    );
+    // try {
+    //   await createTenantDatabase(
+    //     firstName + lastName + userId,
+    //     firstName + lastName,
+    //     password,
+    //   );
+    // } catch (dbError) {
+    //   console.error('Error creating tenant database:', dbError.message);
+    //   return res
+    //     .status(500)
+    //     .json({ message: 'Failed to create tenant database' });
+    // }
 
-      const { tenantSequelize } = req; // Get the tenant-specific Sequelize instance
-      
-      // Define the Business model for the current tenant
-      const Business = defineBusinessModel(tenantSequelize);
+    // console.log('Ther is the sequelize: ', createTenantDatabase);
+
+    // Define the Business model for the current tenant
+
+    // console.log('THis is the business part: ', Business);
 
     // Create a new business record
-    await Business.create({
-      BusinessName,
-      BusinessCAtegory,
-      BusinessDescription,
-      BusinessLogo,
-      stateOfResidence,
-      YearFounded, 
-      CAC,
-      email,
-      TenantID: user.userId,
-    });
+
+    // const Business = defineBusinessModel(tenantSequelize);
+    // const TenantUser = defineUserModel(tenantSequelize);
+    await tenantSequelize.sync();
+
+    // await Business.create({
+    //   businessName,
+    //   businessCategory,
+    //   businessDescription,
+    //   businessLogo,
+    //   stateOfResidence,
+    //   yearFounded,
+    //   RegNo,
+    //   City,
+    //   email,
+    //   TenantID: userId,
+    // });
 
     return res.status(200).json({
       message: `User information updated, and Database for  ${
@@ -232,7 +261,7 @@ exports.updateUserInfo = async (req, res) => {
       } created successfully`,
     });
   } catch (error) {
-    console.error('Error during user information update:', error.message);
+    console.error('Error during user information update:', error);
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 };
@@ -264,7 +293,7 @@ exports.forgotPassword = async (req, res) => {
 
     return res.status(200).json({
       message: `Password reset has been sent to ******${getLast4Digits(
-        phone
+        phone,
       )} phone number`,
     });
   } catch (error) {
@@ -272,7 +301,6 @@ exports.forgotPassword = async (req, res) => {
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 };
-
 
 // Reset password using the provided token
 exports.resetPassword = async (req, res) => {
@@ -316,11 +344,10 @@ exports.resetPassword = async (req, res) => {
   }
 };
 
-
 exports.test = (req, res) => {
-  console.log("you are in your database now")
+  const user = req.user;
+  console.log('you are in your database now', user);
   res.json({
-    msg: "You are in your database now"
-  })
-}
-
+    msg: 'You are in your database now',
+  });
+};

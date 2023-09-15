@@ -1,53 +1,54 @@
 const { Sequelize } = require('sequelize');
 const { Business } = require('../../models');
-const defineBusinessModel =  require('../../models/businessModel');
+const defineBusinessModel = require('../../models/businessModel');
 // const Business =  require('../../models/businessModel');
-
 
 exports.createBusiness = async (req, res) => {
   const { tenantSequelize } = req; // Get the tenant-specific Sequelize instance
-  const { userId } = req.user.userId;
-  // console.log("show DB: ",  req)
+  const userId = req.user.userId;
+  console.log('show DB: ', userId);
 
   try {
+    const {
+      businessName,
+      businessCategory,
+      stateOfResidence,
+      yearFounded,
+      businessDescription,
+      businessLogo,
+      RegNo,
+    } = req.body;
+    // Define the Business model for the current tenant
+    const BusinessModel = defineBusinessModel(tenantSequelize);
+
     const existingBusinessCount = await BusinessModel.count({
       where: {
-        userId: userId,
+        TenantID: userId,
       },
     });
+
+    // console.log('existingBusinessCount: ', existingBusinessCount);
 
     if (existingBusinessCount >= 3) {
       return res.status(400).json({
         message: 'You have reached the maximum limit of 3 businesses per user.',
       });
     }
-    
-    const {BusinessName,
-      BusinessCategory,
-      stateOfResidence,
-      YearFounded,
-      BusinessDescription,
-      BusinessLogo,
-      RegNo,
-      } = req.body 
-    // Define the Business model for the current tenant
-    const BusinessModel = defineBusinessModel(tenantSequelize);
 
     // Synchronize the Business model with the tenant-specific database
     // await BusinessModel.sync();
 
     // const newBusiness = await BusinessModel.create();
     const newBusiness = await BusinessModel.create({
-      BusinessName,
-      BusinessCategory,
+      businessName,
+      businessCategory,
       stateOfResidence,
-      YearFounded,
-      BusinessDescription,
-      userId: userId,
-      BusinessLogo,
+      yearFounded,
+      businessDescription,
+      TenantID: userId,
+      businessLogo,
       RegNo,
-
-  });
+    });
     // console.log("the body and the Business: " + newBusiness.BusinessName)
     res.status(201).json(newBusiness);
   } catch (error) {
@@ -120,7 +121,7 @@ exports.deleteBusinessById = async (req, res) => {
       where: { id },
     });
     if (deleted) {
-      return res.status(204).send("Business has been deleted successfully");
+      return res.status(204).send('Business has been deleted successfully');
     }
     return res.status(404).json({ message: 'Business not found' });
   } catch (error) {

@@ -1,45 +1,38 @@
 'use strict';
-const { Model, DataTypes } = require('sequelize');
+const { Model, DataTypes, sequelize } = require('sequelize');
 const { masterSequelize } = require('../config/database'); // Import the master instance
-const Customer = require('./customerModel'); 
-const Sale = require('./saleModel'); 
-const Debt =require('./debtModel'); 
-const Expense = require('./expenseModel'); 
-const Purchase = require('./purchaseModel'); 
-const Product = require('./productModel'); 
-const Notification = require('./notificationModel'); 
-const Staff =require('./staffModel'); 
+const Customer = require('./customerModel');
+const Sale = require('./saleModel');
+const Debt = require('./debtModel');
+const Expense = require('./expenseModel');
+const Purchase = require('./purchaseModel');
+const Product = require('./productModel');
+const Notification = require('./notificationModel');
+const Staff = require('./staffModel');
+// const userModel = require('./user');
+
+// const User = userModel(masterSequelize);
 
 module.exports = (sequelize) => {
   class Business extends Model {
     static associate(models) {
       // Define other associations here
-      // Business.hasMany(models.Customer, { foreignKey: 'id' });
-      // Business.hasMany(models.Sale, { foreignKey: 'id' });
-      // Business.hasMany(models.Debt, { foreignKey: 'id' });
-      // Business.hasMany(models.Expense, { foreignKey: 'id' });
-      // Business.hasMany(models.Purchase, { foreignKey: 'id' });
-      // Business.hasMany(models.Product, { foreignKey: 'id' });
-      // Business.hasMany(models.Notification, { foreignKey: 'id' });
-      // Business.hasMany(models.Staff, { foreignKey: 'id' });
-
-    
     }
   }
   Business.init(
     {
-      BusinessName: DataTypes.STRING,
-      BusinessCategory: DataTypes.STRING,
+      businessName: DataTypes.STRING,
+      businessCategory: DataTypes.STRING,
       City: DataTypes.STRING,
-      YearFounded: DataTypes.DATE,
+      yearFounded: DataTypes.DATE,
       stateOfResidence: DataTypes.STRING,
-      BusinessDescription: DataTypes.TEXT,
-      BusinessLogo: DataTypes.STRING,
+      businessDescription: DataTypes.TEXT,
+      businessLogo: DataTypes.STRING,
       RegNo: DataTypes.BOOLEAN,
       TenantID: {
         type: DataTypes.INTEGER,
         references: {
-          model: 'Users',
+          model: 'TenantUsers',
           key: 'id',
         },
       },
@@ -47,24 +40,21 @@ module.exports = (sequelize) => {
     {
       sequelize,
       modelName: 'Business',
-    }
+    },
   );
-
-
 
   // Define a foreign key constraint for the TenantID column
   // sequelize.query(`
   //   ALTER TABLE \`businesses\`
   //   ADD CONSTRAINT \`business_tenant_user_fk\`
   //   FOREIGN KEY (\`TenantID\`)
-  //   REFERENCES \`bookkeeping_db\`.\`Users\` (\`id\`)
+  //   REFERENCES \`bookkeeping_db\`.\`Users\`` (\`id\`)
   //   ON DELETE CASCADE
   //   ON UPDATE CASCADE;
-  // `);
+  //  `);
 
   return Business;
 };
-
 
 /// models/business.js
 // const { DataTypes } = require('sequelize');

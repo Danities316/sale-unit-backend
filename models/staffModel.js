@@ -1,6 +1,6 @@
 'use strict';
-const { Model,  DataTypes } = require('sequelize');
-const Business = require('./businessModel'); 
+const { Model, DataTypes } = require('sequelize');
+const Business = require('./businessModel');
 
 module.exports = (sequelize) => {
   class Staff extends Model {
@@ -29,11 +29,18 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING,
         allowNull: false,
       },
+      businessId: {
+        type: DataTypes.INTEGER,
+        references: {
+          model: 'businesses',
+          key: 'id',
+        },
+      },
     },
     {
       sequelize,
       modelName: 'Staff',
-    }
+    },
   );
   return Staff;
 };

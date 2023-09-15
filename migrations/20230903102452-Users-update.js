@@ -9,10 +9,6 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER,
       },
-      username: {
-        type: Sequelize.STRING,
-        allowNull: true,
-      },
       firstName: {
         type: Sequelize.STRING,
         allowNull: true,
@@ -21,11 +17,7 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: true,
       },
-      businessName: {
-        type: Sequelize.STRING,
-        allowNull: true,
-      },
-      CAC: {
+      RegNo: {
         type: Sequelize.BOOLEAN,
         defaultValue: false,
       },
@@ -61,6 +53,10 @@ module.exports = {
         validate: {
           is: /^[0-9]{11}$/i, // Validates phone number format (11 digits)
         },
+      },
+      defaultBusinessId: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
       },
       createdAt: {
         allowNull: false,

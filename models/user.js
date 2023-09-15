@@ -1,10 +1,17 @@
-const { Model, DataTypes } = require('sequelize');
+const { Model, DataTypes, Sequelize } = require('sequelize');
+const { masterSequelize } = require('../config/database'); // Import the master instance
+
+const Business = require('./businessModel');
 
 module.exports = (sequelize) => {
   class User extends Model {
     static associate(models) {
       // Define associations here if applicable
       // For example: this.hasMany(models.Post, { foreignKey: 'userId' });
+      // User.hasMany(models.Business, {
+      //   foreignKey: 'defaultBusinessId',
+      //   as: 'defaultBusiness',
+      // });
     }
   }
 
@@ -14,8 +21,7 @@ module.exports = (sequelize) => {
       lastName: DataTypes.STRING,
       password: DataTypes.STRING,
       isVerified: DataTypes.BOOLEAN,
-      businessName: DataTypes.STRING,
-      CAC: DataTypes.BOOLEAN,
+      RegNo: DataTypes.BOOLEAN,
       email: {
         type: DataTypes.STRING,
         allowNull: true,
@@ -31,11 +37,15 @@ module.exports = (sequelize) => {
       verificationCode: DataTypes.STRING,
       resetToken: DataTypes.STRING,
       resetTokenExpiry: DataTypes.DATE,
+      defaultBusinessId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
     },
     {
-      sequelize,
+      sequelize: masterSequelize,
       modelName: 'User',
-    }
+    },
   );
 
   return User;

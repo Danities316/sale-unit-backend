@@ -28,7 +28,9 @@ const salesRoutes = require('./src/routes/salesRoutes');
 masterSequelize
   .authenticate()
   .then(() => {
-    console.log('Master database connection has been established successfully.');
+    console.log(
+      'Master database connection has been established successfully.',
+    );
   })
   .catch((err) => {
     console.error('Unable to connect to the master database:', err);
@@ -55,14 +57,14 @@ app.use(
     resave: false,
     store: sessionStore,
     saveUninitialized: true,
-  })
+  }),
 );
 app.use(express.json()); // Parse JSON requests
 app.use(morgan('combined')); // Logging
 app.use(
   helmet({
     contentSecurityPolicy: false,
-  })
+  }),
 ); // Helmet for security headers
 app.use(express.urlencoded({ extended: false }));
 app.use(bodyParser.json());
