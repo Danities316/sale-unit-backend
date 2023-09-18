@@ -17,7 +17,7 @@ module.exports = (sequelize) => {
       paymentMethod: DataTypes.ENUM('Transfer', 'Card', 'Cash'),
       invoiceNumber: DataTypes.STRING,
       saleDate: DataTypes.DATE,
-      note: DataTypes.TEXT,
+      description: DataTypes.TEXT,
       Amount: DataTypes.FLOAT,
       unitPrice: DataTypes.FLOAT,
       totalPrice: DataTypes.FLOAT,

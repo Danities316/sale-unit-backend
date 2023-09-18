@@ -24,7 +24,8 @@ const authRoutes = require('./src/routes/authRoutes');
 const businessRoutes = require('./src/routes/businnessRoutes');
 const salesRoutes = require('./src/routes/salesRoutes');
 const debtRoutes = require('./src/routes/debtRoutes');
-const customerRoutes = require('./src/routes/customerRoutes');
+const customerRoutes = require('./src/routes/customerRoute');
+const productRoutes = require('./src/routes/productRoutes');
 
 // Test the master database connection
 masterSequelize
@@ -54,7 +55,7 @@ app.use(cors());
 app.use(
   session({
     secret: process.env.JWT_SECRET,
-    maxAge: 3600000, // Session expires in 1 hour
+    maxAge: 172800000, // Session expires in 3 days
     secure: true, // Only transmit cookie over HTTPS
     resave: false,
     store: sessionStore,
@@ -78,6 +79,7 @@ app.use('/api/business', businessRoutes);
 app.use('/api/sales', salesRoutes);
 app.use('/api/debts', debtRoutes);
 app.use('/api/customers', customerRoutes);
+app.use('/api/product', productRoutes);
 
 // Serve Swagger UI at /api-docs
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));

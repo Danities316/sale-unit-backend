@@ -1,5 +1,5 @@
 const { Sequelize } = require('sequelize');
-const { Business } = require('../../models');
+const cloudinary = require('../../config/cloudinary');
 const defineBusinessModel = require('../../models/businessModel');
 // const Business =  require('../../models/businessModel');
 
@@ -15,9 +15,13 @@ exports.createBusiness = async (req, res) => {
       stateOfResidence,
       yearFounded,
       businessDescription,
-      businessLogo,
+      // businessLogo,
       RegNo,
     } = req.body;
+
+    const logoUrl = await cloudinary.uploader.upload(req.file.path);
+    // console.log('This is the URL: ', logoUrl);
+
     // Define the Business model for the current tenant
     const BusinessModel = defineBusinessModel(tenantSequelize);
 
@@ -27,16 +31,11 @@ exports.createBusiness = async (req, res) => {
       },
     });
 
-    // console.log('existingBusinessCount: ', existingBusinessCount);
-
     if (existingBusinessCount >= 3) {
       return res.status(400).json({
         message: 'You have reached the maximum limit of 3 businesses per user.',
       });
     }
-
-    // Synchronize the Business model with the tenant-specific database
-    // await BusinessModel.sync();
 
     // const newBusiness = await BusinessModel.create();
     const newBusiness = await BusinessModel.create({
@@ -46,7 +45,7 @@ exports.createBusiness = async (req, res) => {
       yearFounded,
       businessDescription,
       TenantID: userId,
-      businessLogo,
+      businessLogo: logoUrl.secure_url,
       RegNo,
     });
     // console.log("the body and the Business: " + newBusiness.BusinessName)
@@ -93,12 +92,36 @@ exports.getBusinessById = async (req, res) => {
 exports.updateBusinessById = async (req, res) => {
   const { id } = req.params;
   const { tenantSequelize } = req; // Get the tenant-specific Sequelize instance
+  const {
+    businessName,
+    businessCategory,
+    stateOfResidence,
+    yearFounded,
+    businessDescription,
+    // businessLogo,
+    RegNo,
+  } = req.body;
+
+  // Check if a file is included in the request (e.g., businessLogo)
+
+  const logoUrl = await uploadToCloudinary(req.file.path);
 
   const BusinessModel = defineBusinessModel(tenantSequelize);
   try {
-    const [updated] = await BusinessModel.update(req.body, {
-      where: { id },
-    });
+    const [updated] = await BusinessModel.update(
+      {
+        businessName,
+        businessCategory,
+        stateOfResidence,
+        yearFounded,
+        businessDescription,
+        businessLogo: logoUrl.secure_url,
+        RegNo,
+      },
+      {
+        where: { id },
+      },
+    );
     if (updated) {
       const updatedBusiness = await BusinessModel.findByPk(id);
       return res.status(200).json(updatedBusiness);

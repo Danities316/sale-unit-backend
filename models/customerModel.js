@@ -13,7 +13,8 @@ module.exports = (sequelize) => {
   Customer.init(
     {
       name: DataTypes.STRING,
-      Phone: DataTypes.INTEGER,
+      phone: DataTypes.INTEGER,
+      profileImage: DataTypes.STRING,
       businessId: {
         type: DataTypes.INTEGER,
         references: {

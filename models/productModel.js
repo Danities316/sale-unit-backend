@@ -13,9 +13,12 @@ module.exports = (sequelize) => {
   Product.init(
     {
       productName: DataTypes.STRING,
-      category: DataTypes.STRING,
-      unitPrice: DataTypes.FLOAT,
-      note: DataTypes.TEXT,
+      costPrice: DataTypes.FLOAT,
+      sellingPrice: DataTypes.FLOAT,
+      unit: DataTypes.ENUM('pack', 'canton'),
+      description: DataTypes.TEXT,
+      label: DataTypes.STRING,
+      productImage: DataTypes.STRING,
       reorderThreshold: DataTypes.INTEGER,
       reorderQuantity: DataTypes.INTEGER,
       quentintyOnHand: DataTypes.INTEGER,

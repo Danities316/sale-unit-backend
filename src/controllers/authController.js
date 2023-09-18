@@ -1,6 +1,7 @@
 const { check, validationResult } = require('express-validator');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const cloudinary = require('../../config/cloudinary');
 const crypto = require('crypto');
 const { User } = require('../../models');
 const defineUserModel = require('../../models/userModel');
@@ -18,8 +19,7 @@ const {
 } = require('../../src/middleware/tenantMiddleware');
 const { TenantConfig } = require('../../models');
 const { urlencoded } = require('body-parser');
-// const { Business } = require('../../models');
-// const defineBusinessModel = require('../../models/businessModel');
+const defineBusinessModel = require('../../models/businessModel');
 
 dotenv.config();
 
@@ -33,7 +33,7 @@ const generateVerificationCode = () => {
 // Register a new user
 exports.registerUser = async (req, res) => {
   try {
-    const { password, phone } = req.body;
+    const { password, phone, firstName, lastName } = req.body;
 
     // Validate phone number and password
     if (!check('phone').isMobilePhone(phone, ['en-NG'])) {
@@ -77,6 +77,8 @@ exports.registerUser = async (req, res) => {
     const newUser = await User.create({
       password: hashedPassword,
       phone,
+      firstName,
+      lastName,
       verificationCode,
     });
 
@@ -139,6 +141,7 @@ exports.loginUser = async (req, res) => {
     if (passwordMatch) {
       // Generate and send JWT token
       const token = jwt.sign({ userId: user.id }, JWT_SECRET);
+      switchTenant();
       return res.status(200).json({ token });
     } else {
       return res.status(401).json({ message: 'Invalid credentials' });
@@ -163,21 +166,20 @@ exports.updateUserInfo = async (req, res) => {
 
   try {
     const {
-      firstName,
-      lastName,
-      // businessName,
-      // businessCategory,
-      // businessDescription,
-      // businessLogo,
-      // stateOfResidence,
-      // yearFounded,
-      // City,
-      // RegNo,
+      businessName,
+      businessCategory,
+      stateOfResidence,
+      City,
+      businessDescription,
+      RegNo,
       email,
     } = req.body;
 
+    // upload image from the request body
+    const businessLogoUrl = await cloudinary.uploader.upload(req.file.path);
+
     // Validate the incoming data
-    if (!firstName || !lastName || !email) {
+    if (!firstName || !lastName || !email || !businessName) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
@@ -190,15 +192,6 @@ exports.updateUserInfo = async (req, res) => {
 
     // Generate password to be used in the database
     const password = crypto.randomBytes(4).toString('hex');
-
-    await User.update(
-      {
-        firstName,
-        lastName,
-        email,
-      },
-      { where: { id: userId } },
-    );
 
     // Insert tenant configuration into the central database (bookkeeping_db.TenantConfigs)
     await TenantConfig.create({
@@ -217,27 +210,37 @@ exports.updateUserInfo = async (req, res) => {
       password,
     );
 
-    // const Business = defineBusinessModel(tenantSequelize);
+    const Business = defineBusinessModel(tenantSequelize);
     // const TenantUser = defineUserModel(tenantSequelize);
     await tenantSequelize.sync();
 
-    // await Business.create({
-    //   businessName,
-    //   businessCategory,
-    //   businessDescription,
-    //   businessLogo,
-    //   stateOfResidence,
-    //   yearFounded,
-    //   RegNo,
-    //   City,
-    //   email,
-    //   TenantID: userId,
-    // });
+    await Business.create({
+      businessName,
+      businessCategory,
+      businessDescription,
+      businessLogo: businessLogoUrl.secure_url,
+      stateOfResidence,
+      yearFounded,
+      RegNo,
+      City,
+      email,
+      TenantID: userId,
+    });
+
+    // Generate a new JWT token with an updated payload
+    const tokenPayload = {
+      userId: userId,
+      businessIds: businessIds, // Include the businessIds in the payload
+    };
+
+    // Generate and send JWT token
+    const token = jwt.sign(tokenPayload, JWT_SECRET);
 
     return res.status(200).json({
       message: `User information updated, and Database for  ${
         firstName + lastName + userId
       } created successfully`,
+      token: token,
     });
   } catch (error) {
     console.error('Error during user information update:', error);

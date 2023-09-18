@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const customerController = require('../controllers/customerController');
+const inventoryController = require('../controllers/productController');
 
 //multer storage
 const storage = multer.diskStorage({
@@ -18,9 +18,15 @@ const upload = multer({
   storage: storage,
 });
 
-router.post('/', upload.single('image'), customerController.createCustomer);
-router.get('/:tenantId/:businessId', customerController.retrieveCustomers);
-router.put('/:id', upload.single('image'), customerController.updateCustomer);
-router.delete('/:id', customerController.deleteCustomer);
+// Middleware for authentication and authorization woulc be added here.
+
+router.post('/', upload.single('image'), inventoryController.createProductItem);
+router.get('/:tenantId', inventoryController.retrieveProductItems);
+router.put(
+  '/:id',
+  upload.single('image'),
+  inventoryController.updateProductItem,
+);
+router.delete('/:id', inventoryController.deleteProductItem);
 
 module.exports = router;

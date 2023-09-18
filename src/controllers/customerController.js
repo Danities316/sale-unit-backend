@@ -1,5 +1,6 @@
 // controllers/customerController.js
 const { Customer } = require('../../models');
+const cloudinary = require('../../config/cloudinary');
 const { Sequelize } = require('sequelize');
 const defineCustomersModel = require('../../models/customerModel');
 const defineBusinessModel = require('../../models/businessModel');
@@ -13,11 +14,15 @@ exports.createCustomer = async (req, res) => {
   try {
     const { name, Phone } = req.body;
 
+    const logoUrl = await cloudinary.uploader.upload(req.file.path);
+    // console.log('This is the URL: ', logoUrl);
+
     // Define the Business model for the current tenant
     const CustomerModel = defineCustomersModel(tenantSequelize);
     const customer = await CustomerModel.create({
       name,
       Phone,
+      profileImage: logoUrl.secure_url,
       businessId,
     });
     return res.status(201).json(customer);
@@ -46,9 +51,16 @@ exports.updateCustomer = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const [updatedRows] = await Customer.update(req.body, {
-      where: { id },
-    });
+    const { name, phone } = req.body;
+
+    const logoUrl = await cloudinary.uploader.upload(req.file.path);
+    // console.log('This is the URL: ', logoUrl);
+    const [updatedRows] = await Customer.update(
+      { name, profileImage: logoUrl.secure_url, phone },
+      {
+        where: { id },
+      },
+    );
 
     if (updatedRows === 0) {
       return res.status(404).json({ error: 'Customer not found.' });
