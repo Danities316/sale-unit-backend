@@ -35,7 +35,7 @@ router.post(
 );
 
 // Login route
-router.post('/login', authenticateJWT, switchTenant, AuthController.loginUser);
+router.post('/login', AuthController.loginUser);
 
 // Forgot password route
 router.post('/forgot-password', AuthController.forgotPassword);

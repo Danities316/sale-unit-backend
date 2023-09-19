@@ -18,11 +18,11 @@ module.exports = (sequelize) => {
       invoiceNumber: DataTypes.STRING,
       saleDate: DataTypes.DATE,
       description: DataTypes.TEXT,
-      Amount: DataTypes.FLOAT,
+      amount: DataTypes.FLOAT,
       unitPrice: DataTypes.FLOAT,
       totalPrice: DataTypes.FLOAT,
       quantity: DataTypes.INTEGER,
-      Debt: DataTypes.BOOLEAN,
+      debt: DataTypes.BOOLEAN,
       businessId: {
         type: DataTypes.INTEGER,
         references: {

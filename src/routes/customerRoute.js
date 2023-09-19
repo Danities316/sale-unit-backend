@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const customerController = require('../controllers/customerController');
+const authorizeBusinessAccess = require('../middleware/jwtMiddleware');
 
 //multer storage
 const storage = multer.diskStorage({
@@ -18,9 +19,27 @@ const upload = multer({
   storage: storage,
 });
 
-router.post('/', upload.single('image'), customerController.createCustomer);
-router.get('/:tenantId/:businessId', customerController.retrieveCustomers);
-router.put('/:id', upload.single('image'), customerController.updateCustomer);
-router.delete('/:id', customerController.deleteCustomer);
+router.post(
+  '/:businessId',
+  upload.single('image'),
+  authorizeBusinessAccess,
+  customerController.createCustomer,
+);
+router.get(
+  '/:tenantId/:businessId',
+  authorizeBusinessAccess,
+  customerController.retrieveCustomers,
+);
+router.put(
+  '/:id',
+  upload.single('image'),
+  authorizeBusinessAccess,
+  customerController.updateCustomer,
+);
+router.delete(
+  '/:id',
+  authorizeBusinessAccess,
+  customerController.deleteCustomer,
+);
 
 module.exports = router;

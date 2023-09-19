@@ -26,6 +26,8 @@ const salesRoutes = require('./src/routes/salesRoutes');
 const debtRoutes = require('./src/routes/debtRoutes');
 const customerRoutes = require('./src/routes/customerRoute');
 const productRoutes = require('./src/routes/productRoutes');
+const expenseRoutes = require('./src/routes/expenseRoutes');
+const purchaseRoutes = require('./src/routes/purchaseRoutes');
 
 // Test the master database connection
 masterSequelize
@@ -80,6 +82,8 @@ app.use('/api/sales', salesRoutes);
 app.use('/api/debts', debtRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/product', productRoutes);
+app.use('/api/expense', expenseRoutes);
+app.use('/api/purchase', purchaseRoutes);
 
 // Serve Swagger UI at /api-docs
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));

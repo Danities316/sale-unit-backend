@@ -1,4 +1,3 @@
-// controllers/customerController.js
 const { Customer } = require('../../models');
 const cloudinary = require('../../config/cloudinary');
 const { Sequelize } = require('sequelize');
@@ -8,11 +7,10 @@ const defineBusinessModel = require('../../models/businessModel');
 // Create a Customer
 exports.createCustomer = async (req, res) => {
   const { tenantSequelize } = req; // Get the tenant-specific Sequelize instance
-  const userId = req.user.userId;
-  const businessId = req.params.id;
+  const { businessId } = req.params;
 
   try {
-    const { name, Phone } = req.body;
+    const { name, Phone, profileImage } = req.body;
 
     const logoUrl = await cloudinary.uploader.upload(req.file.path);
     // console.log('This is the URL: ', logoUrl);

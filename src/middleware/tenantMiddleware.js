@@ -73,7 +73,7 @@ CREATE USER '${username}'@'localhost' IDENTIFIED BY '${password}';
     await tenantSequelize.sync();
 
     const mainUsers = await User.findAll();
-    console.log('mainUsers:', mainUsers);
+    // console.log('mainUsers:', mainUsers);
 
     if (Array.isArray(mainUsers) && mainUsers.length > 0) {
       for (let mainUser of mainUsers) {
@@ -105,6 +105,7 @@ CREATE USER '${username}'@'localhost' IDENTIFIED BY '${password}';
 
 const switchTenant = async (req, res, next) => {
   const { userId } = req.user;
+  // console.log('This is the user: ', userId);
 
   try {
     // Fetch the tenant-specific configuration from the database
@@ -132,8 +133,6 @@ const switchTenant = async (req, res, next) => {
 
     // Authenticate with the tenant-specific database
     await tenantSequelize.authenticate();
-
-    // await Business.sync();
 
     // Replace the default Sequelize instance with the tenant-specific one
     //This means that all subsequent database operations

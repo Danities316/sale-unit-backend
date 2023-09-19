@@ -83,7 +83,9 @@ exports.registerUser = async (req, res) => {
     });
 
     // Generate and send JWT token
-    const token = jwt.sign({ userId: newUser.id }, JWT_SECRET);
+    const token = jwt.sign({ userId: newUser.id }, JWT_SECRET, {
+      expiresIn: '1h',
+    });
 
     // Respond with a success message
     return res.status(201).json({ token });
@@ -131,6 +133,7 @@ exports.verifyPhoneNumber = async (req, res) => {
 exports.loginUser = async (req, res) => {
   try {
     const { phone, password } = req.body;
+    const { tenantSequelize } = req; // Get the tenant-specific Sequelize instance
 
     // Find the user by phone number
     const user = await User.findOne({ where: { phone } });
@@ -139,10 +142,31 @@ exports.loginUser = async (req, res) => {
     const passwordMatch = await bcrypt.compare(password, user.password);
 
     if (passwordMatch) {
-      // Generate and send JWT token
-      const token = jwt.sign({ userId: user.id }, JWT_SECRET);
-      switchTenant();
-      return res.status(200).json({ token });
+      // await Business.sync();
+      const BusinessModel = defineBusinessModel(tenantSequelize);
+
+      // Fetch and include the user's associated businessIds here
+      const userBusinesses = await BusinessModel.findAll({
+        where: { TenantID: userId },
+        attributes: ['id'],
+      });
+      const businessIds = userBusinesses.map((business) => business.id);
+
+      const payload = {
+        userId: user.id,
+        tenantId: user.tenantId,
+        businessIds: businessIds, // Initialize with an empty array
+      };
+
+      // calling the switchTenant middleware to switch to the user's specific database
+      switchTenant(req, res, async () => {
+        // Generate and send JWT token
+        // Calculate the expiration time in seconds for 3 days
+        const expiresIn = 3 * 24 * 60 * 60; // 3 days * 24 hours * 60 minutes * 60 seconds
+
+        const token = jwt.sign(payload, JWT_SECRET, { expiresIn });
+        return res.status(200).json({ token });
+      });
     } else {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
@@ -227,14 +251,8 @@ exports.updateUserInfo = async (req, res) => {
       TenantID: userId,
     });
 
-    // Generate a new JWT token with an updated payload
-    const tokenPayload = {
-      userId: userId,
-      businessIds: businessIds, // Include the businessIds in the payload
-    };
-
-    // Generate and send JWT token
-    const token = jwt.sign(tokenPayload, JWT_SECRET);
+    // Generate a new JWT token
+    const token = jwt.sign({ userId: newUser.id }, JWT_SECRET);
 
     return res.status(200).json({
       message: `User information updated, and Database for  ${

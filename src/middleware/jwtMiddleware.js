@@ -17,6 +17,11 @@ async function authenticateJWT(req, res, next) {
     const decodedToken = jwt.verify(token.replace('Bearer ', ''), JWT_SECRET);
     req.user = decodedToken;
 
+    // checking if token has Token has expired
+    if (decodedToken.exp < Date.now() / 1000) {
+      return res.status(401).json({ message: 'Token expired' });
+    }
+
     // Fetch and include the user's associated businessIds here
     const userBusinesses = await Business.findAll({
       where: { TenantID: decodedToken.userId },
@@ -33,5 +38,17 @@ async function authenticateJWT(req, res, next) {
     return res.status(403).json({ message: 'Invalid token' });
   }
 }
+
+exports.authorizeBusinessAccess = (req, res, next) => {
+  const { businessId } = req.params;
+  const { businessIds } = req.user;
+
+  if (businessIds.includes(businessId)) {
+    // User is authorized to access this business
+    next();
+  } else {
+    return res.status(403).json({ message: 'Access denied' });
+  }
+};
 
 module.exports = authenticateJWT;

@@ -5,19 +5,19 @@ const defineBusinessModel = require('../../models/businessModel');
 exports.createSaleBusiness = async (req, res) => {
   const { tenantSequelize } = req; // Get the tenant-specific Sequelize instance
   const userId = req.user.userId;
+  const { businessId } = req.params;
   try {
     const {
       paymentMethod,
       invoiceNumber,
       saleDate,
       description,
-      Amount,
+      amount,
       unitPrice,
       totalPrice,
       quantity,
-      Debt,
-      productID,
-      bussinessID,
+      debt,
+      productId,
     } = req.body;
 
     // Define the Sales model for the current tenant
@@ -29,14 +29,13 @@ exports.createSaleBusiness = async (req, res) => {
       invoiceNumber,
       saleDate,
       description,
-      Amount,
+      amount,
       unitPrice,
       totalPrice,
       quantity,
-      Debt,
-      productID,
-      bussinessID,
-      userId: userId,
+      debt,
+      productId,
+      bussinessId,
     });
 
     res.status(201).json(newSale);

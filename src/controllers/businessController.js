@@ -3,10 +3,13 @@ const cloudinary = require('../../config/cloudinary');
 const defineBusinessModel = require('../../models/businessModel');
 // const Business =  require('../../models/businessModel');
 
+// Secret key for JWT token
+const JWT_SECRET = process.env.JWT_SECRET;
+
 exports.createBusiness = async (req, res) => {
   const { tenantSequelize } = req; // Get the tenant-specific Sequelize instance
   const userId = req.user.userId;
-  console.log('show DB: ', userId);
+  // console.log('show DB: ', userId);
 
   try {
     const {
@@ -48,8 +51,27 @@ exports.createBusiness = async (req, res) => {
       businessLogo: logoUrl.secure_url,
       RegNo,
     });
+
+    // Fetch and include the user's associated businessIds here
+    const userBusinesses = await BusinessModel.findAll({
+      where: { TenantID: userId },
+      attributes: ['id'],
+    });
+
+    const existingBusinessIds = userBusinesses.map((business) => business.id);
+
+    // Add the new businessId to the existing list
+    existingBusinessIds.push(newBusiness.id);
+
+    // Generate a new JWT token with the updated businessIds
+    const tokenPayload = {
+      userId: userId,
+      businessIds: existingBusinessIds,
+    };
+
+    const updatedToken = jwt.sign(tokenPayload, JWT_SECRET);
     // console.log("the body and the Business: " + newBusiness.BusinessName)
-    res.status(201).json(newBusiness);
+    res.status(201).json({ newBusiness, token: updatedToken });
   } catch (error) {
     console.error('There is an error creating bussiness ', error);
     res.status(500).json({ message: 'Internal Server Error' });

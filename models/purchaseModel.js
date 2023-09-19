@@ -14,13 +14,15 @@ module.exports = (sequelize) => {
   }
   Purchase.init(
     {
-      vendor: DataTypes.STRING,
-      paymentMethod: DataTypes.ENUM('Transfer', 'Card', 'Cash'),
-      invoiceNumber: DataTypes.STRING,
+      productName: DataTypes.STRING,
+      paidBy: DataTypes.ENUM('Transfer', 'Card', 'Cash', 'POS'),
+      description: DataTypes.STRING,
+      unit: DataTypes.STRING,
+      purchaseImage: DataTypes.STRING,
       purchaseDateDate: DataTypes.DATE,
-      Amount: DataTypes.FLOAT,
-      unitPrice: DataTypes.FLOAT,
-      totalPrice: DataTypes.FLOAT,
+      amount: DataTypes.FLOAT,
+      costPrice: DataTypes.FLOAT,
+      sellingPrice: DataTypes.FLOAT,
       quantity: DataTypes.INTEGER,
       businessId: {
         type: DataTypes.INTEGER,

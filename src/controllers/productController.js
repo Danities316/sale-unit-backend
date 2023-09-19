@@ -1,5 +1,3 @@
-// controllers/productController.js
-const { Product } = require('../../models');
 const cloudinary = require('../../config/cloudinary');
 const defineProductModel = require('../../models/productModel');
 const defineNotificationModel = require('../../models/notificationModel');
@@ -8,7 +6,7 @@ const defineNotificationModel = require('../../models/notificationModel');
 // Create an product Item
 exports.createProductItem = async (req, res) => {
   const { tenantSequelize } = req; // Get the tenant-specific Sequelize instance
-
+  const { businessId } = req.params;
   try {
     // Extract necessary data from req.body
     const {
@@ -22,7 +20,6 @@ exports.createProductItem = async (req, res) => {
       reorderQuantity,
       quantityOnHand,
     } = req.body;
-    const { tenantId, businessId } = req.user; // Assuming you have user context with tenantId and businessId
 
     // upload image from the request body
     const productImageUrl = await cloudinary.uploader.upload(req.file.path);
@@ -41,7 +38,6 @@ exports.createProductItem = async (req, res) => {
       reorderQuantity,
       quantityOnHand,
       productImage: productImageUrl.secure_url,
-      tenantId,
       businessId,
     });
 
@@ -71,17 +67,12 @@ exports.retrieveProductItems = async (req, res) => {
   const { tenantSequelize } = req; // Get the tenant-specific Sequelize instance
 
   try {
-    const { tenantId } = req.params;
     const { businessId } = req.user;
 
     const Product = defineProductModel(tenantSequelize);
-
-    // Authenticate and authorize the user
-    // Ensure that the authenticated user has access to the specified tenant's data
-
     // Fetch product items based on tenantId and businessId
     const productItems = await Product.findAll({
-      where: { tenantId, businessId },
+      where: { businessId },
     });
 
     return res.json(productItems);
@@ -125,7 +116,6 @@ exports.updateProductItem = async (req, res) => {
         reorderQuantity,
         quantityOnHand,
         productImage: productImageUrl.secure_url,
-        tenantId,
         businessId,
       },
       { where: { id, businessId } },
@@ -148,10 +138,7 @@ exports.updateProductItem = async (req, res) => {
 exports.deleteProductItem = async (req, res) => {
   try {
     const { id } = req.params;
-    const { businessId } = req.user; // Assuming you have user context with businessId
-
-    // Authenticate and authorize the user (Implement this logic based on your authentication system)
-    // Ensure that the authenticated user has access to delete the product item
+    const { businessId } = req.user;
 
     // Delete the product item record from the database
     const deletedRowCount = await Product.destroy({

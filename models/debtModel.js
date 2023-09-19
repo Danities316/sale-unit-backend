@@ -14,10 +14,12 @@ module.exports = (sequelize) => {
   }
   Debt.init(
     {
-      note: DataTypes.TEXT,
+      description: DataTypes.TEXT,
       debtDatee: DataTypes.DATE,
-      Amount: DataTypes.FLOAT,
+      amount: DataTypes.FLOAT,
       debtStatus: DataTypes.STRING,
+      debtTypes: DataTypes.STRING,
+      debtDueDate: DataTypes.DATE,
       businessId: {
         type: DataTypes.INTEGER,
         references: {

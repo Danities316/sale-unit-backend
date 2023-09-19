@@ -1,68 +1,146 @@
-// controllers/debtController.js
-const { Debt } = require('../../models');
+const defineDebtModel = require('../../models/debtModel');
+// const defineBusinessModel = require('../../models/businessModel');
 
-// Create a Debt
+// Create a new debt record
 exports.createDebt = async (req, res) => {
+  const { tenantSequelize } = req;
   try {
-    const { amount, description } = req.body;
-    const { businessId, customerId } = req.params.id;
+    const {
+      description,
+      debtDate,
+      amount,
+      debtStatus,
+      debtType,
+      debtDueDate,
+      customerId,
+    } = req.body;
+    const { businessId } = req.user; // Assuming you have user context with businessId
 
-    const debt = await Debt.create(amount, description, customerId);
-    return res.status(201).json(debt);
+    // Define the Business model for the current tenant
+    const Debt = defineDebtModel(tenantSequelize);
+    const newDebt = await Debt.create({
+      description,
+      debtDate,
+      amount,
+      debtStatus,
+      debtType,
+      debtDueDate,
+      businessId,
+      customerId,
+    });
+
+    return res.status(201).json(newDebt);
   } catch (error) {
-    return res.status(500).json({ error: 'Error creating debt.' });
+    console.error('Error creating debt:', error);
+    return res.status(500).json({ message: 'Internal Server Error' });
   }
 };
 
-// Retrieve Debts for a Tenant
-exports.retrieveDebts = async (req, res) => {
-  const { businessId, customerId } = req.params.id;
-
+// Get all debts for a specific business
+exports.getAllDebts = async (req, res) => {
   try {
+    const { businessId } = req.user;
+    const { tenantSequelize } = req;
+
+    // Define the Business model for the current tenant
+    const Debt = defineDebtModel(tenantSequelize);
+
     const debts = await Debt.findAll({
-      where: { customerId },
+      where: { businessId },
     });
-    return res.json(debts);
+
+    return res.status(200).json(debts);
   } catch (error) {
-    return res.status(500).json({ error: 'Error retrieving debts.' });
+    console.error('Error fetching debts:', error);
+    return res.status(500).json({ message: 'Internal Server Error' });
   }
 };
 
-// Update Debt
-exports.updateDebt = async (req, res) => {
-  const { id } = req.params;
-
+// Get a debt by ID
+exports.getDebtById = async (req, res) => {
   try {
-    const [updatedRows] = await Debt.update(req.body, {
-      where: { id },
+    const { id } = req.params;
+    const { businessId } = req.user; // Assuming you have user context with businessId
+    const { tenantSequelize } = req;
+
+    // Define the Business model for the current tenant
+    const Debt = defineDebtModel(tenantSequelize);
+
+    const debt = await Debt.findOne({
+      where: { id, businessId },
     });
 
-    if (updatedRows === 0) {
-      return res.status(404).json({ error: 'Debt not found.' });
+    if (!debt) {
+      return res.status(404).json({ message: 'Debt not found' });
     }
 
-    const updatedDebt = await Debt.findByPk(id);
-    return res.json(updatedDebt);
+    return res.status(200).json(debt);
   } catch (error) {
-    return res.status(500).json({ error: 'Error updating debt.' });
+    console.error('Error fetching debt by ID:', error);
+    return res.status(500).json({ message: 'Internal Server Error' });
   }
 };
 
-// Delete Debt
-exports.deleteDebt = async (req, res) => {
-  const { id } = req.params;
-
+// Update a debt by ID
+exports.updateDebtById = async (req, res) => {
   try {
-    const deletedRowCount = await Debt.destroy({
-      where: { id },
-    });
+    const { id } = req.params;
+    const { description, debtDate, amount, debtStatus, debtType, debtDueDate } =
+      req.body;
+    const { businessId } = req.user;
+    const { tenantSequelize } = req;
 
-    if (deletedRowCount === 0) {
-      return res.status(404).json({ error: 'Debt not found.' });
+    // Define the Business model for the current tenant
+    const Debt = defineDebtModel(tenantSequelize);
+    const [updated] = await Debt.update(
+      {
+        description,
+        debtDate,
+        amount,
+        debtStatus,
+        debtType,
+        debtDueDate,
+      },
+      {
+        where: { id, businessId },
+      },
+    );
+
+    if (updated) {
+      const updatedDebt = await Debt.findOne({
+        where: { id, businessId },
+      });
+      return res.status(200).json(updatedDebt);
     }
 
-    return res.json({ message: 'Debt deleted successfully.' });
+    return res.status(404).json({ message: 'Debt not found' });
   } catch (error) {
-    return res.status(500).json({ error: 'Error deleting debt.' });
+    console.error('Error updating debt:', error);
+    return res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+// Delete a debt by ID
+exports.deleteDebtById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { businessId } = req.user;
+    const { tenantSequelize } = req;
+
+    // Define the Business model for the current tenant
+    const Debt = defineDebtModel(tenantSequelize);
+
+    const deleted = await Debt.destroy({
+      where: { id, businessId },
+    });
+
+    if (deleted) {
+      return res.status(204).send('Debt has been deleted successfully');
+    }
+
+    return res.status(404).json({ message: 'Debt not found' });
+  } catch (error) {
+    console.error('Error deleting debt:', error);
+    return res.status(500).json({ message: 'Internal Server Error' });
   }
 };

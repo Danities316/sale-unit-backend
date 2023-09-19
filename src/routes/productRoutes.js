@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const inventoryController = require('../controllers/productController');
+const authorizeBusinessAccess = require('../middleware/jwtMiddleware');
 
 //multer storage
 const storage = multer.diskStorage({
@@ -20,7 +21,12 @@ const upload = multer({
 
 // Middleware for authentication and authorization woulc be added here.
 
-router.post('/', upload.single('image'), inventoryController.createProductItem);
+router.post(
+  '/:businessId',
+  upload.single('image'),
+  authorizeBusinessAccess,
+  inventoryController.createProductItem,
+);
 router.get('/:tenantId', inventoryController.retrieveProductItems);
 router.put(
   '/:id',
